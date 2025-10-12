@@ -1,0 +1,21 @@
+.glassCard {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(30px) saturate(120%);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-glass);
+  padding: var(--space-7);
+  margin: var(--space-5) 0;
+  transition: all var(--transition-base);
+}
+
+.interactive {
+  cursor: pointer;
+}
+
+.interactive:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-glass-hover);
+  border-color: rgba(255, 255, 255, 0.5);
+}

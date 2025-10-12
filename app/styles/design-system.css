@@ -1,0 +1,102 @@
+/* Design System - Warm Orange Editorial */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant:wght@300;400;500;600&family=Inter:wght@200;300;400;500&display=swap');
+
+:root {
+  /* Color Palette - Warm Orange Gradient */
+  --color-primary-100: #f9c89b;
+  --color-primary-200: #f5a962;
+  --color-primary-300: #f47920;
+  --color-primary-400: #e66d1a;
+  --color-primary-500: #d96217;
+  --color-primary-600: #cc5714;
+  
+  /* Text Colors */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: rgba(255, 255, 255, 0.95);
+  --color-text-muted: rgba(255, 255, 255, 0.7);
+  
+  /* Glass Effect */
+  --glass-bg: rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.25);
+  --glass-border-hover: rgba(255, 255, 255, 0.35);
+  --glass-blur: blur(20px);
+  
+  /* Typography */
+  --font-display: 'Cormorant', serif;
+  --font-body: 'Inter', sans-serif;
+  
+  /* Font Weights */
+  --weight-thin: 200;
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  
+  /* Spacing Scale (8px base) */
+  --space-1: 0.5rem;   /* 8px */
+  --space-2: 1rem;     /* 16px */
+  --space-3: 1.5rem;   /* 24px */
+  --space-4: 2rem;     /* 32px */
+  --space-5: 2.5rem;   /* 40px */
+  --space-6: 3rem;     /* 48px */
+  --space-7: 3.5rem;   /* 56px */
+  --space-8: 4rem;     /* 64px */
+  --space-10: 5rem;    /* 80px */
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.15);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --shadow-glass-hover: 0 12px 48px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: var(--weight-light);
+  line-height: 1.8;
+  color: var(--color-text-primary);
+  background: var(--color-primary-600);
+  overflow-x: hidden;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Utility Classes */
+.elegant-underline::after {
+  content: '';
+  display: block;
+  width: 50px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.3);
+  margin-top: var(--space-1);
+}
+
+.accent-line {
+  width: 80px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.4);
+  margin: var(--space-4) 0;
+  border-radius: 1px;
+}
