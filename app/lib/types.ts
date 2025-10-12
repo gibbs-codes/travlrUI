@@ -2,28 +2,79 @@
 // Trip Request & Response Types
 // ============================================================================
 
+export interface TravelerDetails {
+  count: number;
+  adults: number;
+  children: number;
+  infants: number;
+}
+
+export interface BudgetBreakdown {
+  flight: number;
+  accommodation: number;
+  food: number;
+  activities: number;
+  [key: string]: number;
+}
+
+export interface BudgetPreferences {
+  total: number;
+  currency: string;
+  breakdown: BudgetBreakdown;
+}
+
+export interface AccommodationPreferences {
+  type: string;
+  minRating: number;
+}
+
+export interface TransportationPreferences {
+  flightClass: string;
+  preferNonStop: boolean;
+}
+
+export interface DiningPreferences {
+  priceRange: string;
+}
+
+export interface TripPreferences {
+  interests: string[];
+  budget: BudgetPreferences;
+  accommodation: AccommodationPreferences;
+  transportation: TransportationPreferences;
+  dining: DiningPreferences;
+}
+
+export interface CollaborationDetails {
+  createdBy: string;
+  [key: string]: any;
+}
+
 export interface TripRequest {
+  title: string;
   destination: string;
   origin: string;
   departureDate: string;
-  returnDate: string;
-  travelers: number;
-  budget: number;
-  interests: string[];
+  returnDate?: string;
+  travelers: TravelerDetails;
+  preferences: TripPreferences;
+  collaboration: CollaborationDetails;
 }
 
 export interface TripResponse {
   tripId: string;
+  title?: string;
   destination: string;
   origin: string;
   departureDate: string;
-  returnDate: string;
-  travelers: number | { count: number };
-  budget: number;
-  interests: string[];
+  returnDate?: string;
+  travelers: TravelerDetails | number;
+  preferences?: Partial<TripPreferences>;
+  collaboration?: CollaborationDetails;
   status: TripStatus;
-  createdAt: string;
-  updatedAt: string;
+  recommendations_ready?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   recommendations?: RecommendationCategories;
   selectedRecommendations?: RecommendationCategories;
 }
@@ -35,6 +86,7 @@ export interface TripResponse {
 export type TripStatus =
   | 'created'
   | 'processing'
+  | 'completed'
   | 'recommendations_ready'
   | 'finalized'
   | 'failed';
@@ -42,10 +94,12 @@ export type TripStatus =
 export interface TripStatusResponse {
   tripId: string;
   status: TripStatus;
+  recommendations_ready?: boolean;
   agents: AgentStatus[];
   progress: number;
   message?: string;
   estimatedTimeRemaining?: number;
+  trip?: TripResponse;
 }
 
 // ============================================================================
