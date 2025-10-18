@@ -102,23 +102,26 @@ export default function Create() {
     try {
       // Prepare API request body
       const requestBody = {
-        title: `Trip to ${formData.destination}`,
+        title: formData.title,
         destination: formData.destination,
         origin: formData.origin,
         departureDate: formData.departureDate,
         returnDate: formData.returnDate || undefined,
         travelers: {
-          count: parseInt(formData.travelers),
-          adults: parseInt(formData.travelers),
+          count: parseInt(formData.travelers) || 1,
+          adults: parseInt(formData.travelers) || 1,
           children: 0,
           infants: 0
         },
+        // Send budget at BOTH locations
+        budget: {
+          total:  1500
+        },
         preferences: {
-          interests: formData.interests,
-          budget: formData.budget ? {
-            total: parseFloat(formData.budget),
-            currency: 'USD'
-          } : undefined
+          interests: formData.interests || [],
+          budget: {
+            total:  1500
+          }
         },
         collaboration: {
           createdBy: 'user@example.com'

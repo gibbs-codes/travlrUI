@@ -319,7 +319,9 @@ export default function Overview() {
                     lineHeight: '1.1',
                     letterSpacing: '0.5px'
                   }}>
-                    {tripData?.destination || 'Your Destination'}
+                    {typeof tripData?.destination === 'string'
+                      ? tripData.destination
+                      : tripData?.destination?.name || 'Your Destination'}
                   </Heading>
 
                   <div style={{
@@ -367,7 +369,9 @@ export default function Overview() {
                           From
                         </Text>
                         <Text style={{ fontSize: '1.15rem', fontWeight: 'var(--weight-semibold)', lineHeight: '1.4' }}>
-                          {tripData.origin}
+                          {typeof tripData.origin === 'string'
+                            ? tripData.origin
+                            : tripData.origin?.name || 'Origin'}
                         </Text>
                       </div>
                     )}

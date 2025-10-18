@@ -198,7 +198,6 @@ export default function CreateTrip() {
 
     return {
       total: Number(budgetTotal.toFixed(2)),
-      currency: 'USD',
       breakdown: scaledBreakdown,
     };
   };
@@ -243,6 +242,8 @@ export default function CreateTrip() {
     setStatusMessage('Building your trip with our travel agents...');
     const startTime = Date.now();
 
+    let finalStatusData: any;
+
     while (true) {
       if (Date.now() - startTime > POLL_TIMEOUT_MS) {
         throw new Error('Trip processing is taking longer than expected. Please try again.');
@@ -252,32 +253,41 @@ export default function CreateTrip() {
       try {
         const statusResponse = await tripAPI.getStatus(tripId);
         statusData = extractData(statusResponse);
+        finalStatusData = statusData;
       } catch (error) {
         throw new Error(getErrorMessage(error));
       }
 
-      const status = statusData?.status;
+      const executionStatus = statusData?.execution?.status;
 
       if (statusData?.message) {
         setStatusMessage(statusData.message);
-      } else if (status === 'processing') {
+      } else if (executionStatus === 'in_progress') {
         setStatusMessage('Our agents are finalizing flights, stays, and experiences...');
       }
 
-      if (status === 'failed') {
-        throw new Error(statusData?.message || 'Trip processing failed. Please try again.');
-      }
+      // Stop polling when orchestrator finishes (completed or failed)
+      const orchestratorFinished =
+        executionStatus === 'completed' ||
+        executionStatus === 'failed';
 
-      const recommendationsReady =
-        status === 'completed' ||
-        status === 'recommendations_ready' ||
-        statusData?.recommendations_ready === true;
-
-      if (recommendationsReady) {
+      if (orchestratorFinished) {
         break;
       }
 
       await delay(POLL_INTERVAL_MS);
+    }
+
+    // Check if we got any recommendations
+    const recommendationCounts = finalStatusData?.recommendationCounts || {};
+    const totalRecommendations = Object.values(recommendationCounts).reduce(
+      (sum: number, count: any) => sum + (typeof count === 'number' ? count : 0),
+      0
+    );
+
+    // If no recommendations at all, show error
+    if (totalRecommendations === 0) {
+      throw new Error('Unable to generate recommendations. Please try again with different preferences.');
     }
 
     setCreationPhase('loading');

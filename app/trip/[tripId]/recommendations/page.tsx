@@ -158,49 +158,62 @@ function RecommendationCard({ recommendation, isSelected, onToggle, category }: 
             fontFamily: 'var(--font-display)',
             zIndex: 10
           }}>
-            ${typeof recommendation.price === 'number' ? recommendation.price.toLocaleString() : recommendation.price}
+            {typeof recommendation.price === 'number'
+              ? `$${recommendation.price.toLocaleString()}`
+              : typeof recommendation.price === 'object' && recommendation.price.amount
+              ? `${recommendation.price.currency || '$'}${recommendation.price.amount.toLocaleString()}`
+              : `$${recommendation.price}`}
           </div>
         )}
 
         {/* Rating with stars */}
-        {recommendation.rating && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            marginBottom: 'var(--space-3)',
-            gap: 'var(--space-1)'
-          }}>
-            <div style={{ display: 'flex' }}>
-              {[...Array(5)].map((_, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  style={{
-                    fontSize: '1.1rem',
-                    color: i < Math.floor(recommendation.rating) ? '#FFD700' : 'rgba(255, 255, 255, 0.25)',
-                    textShadow: i < Math.floor(recommendation.rating) ? '0 0 8px rgba(255, 215, 0, 0.4)' : 'none'
-                  }}
-                >
-                  ★
-                </motion.span>
-              ))}
-            </div>
-            <Text style={{
-              marginLeft: 'var(--space-2)',
-              fontSize: '0.95rem',
-              fontWeight: 'var(--weight-medium)'
+        {recommendation.rating && (() => {
+          const ratingValue = typeof recommendation.rating === 'number'
+            ? recommendation.rating
+            : recommendation.rating?.score || 0;
+          const reviewCount = typeof recommendation.rating === 'object'
+            ? recommendation.rating?.reviewCount
+            : recommendation.reviews;
+
+          return (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: 'var(--space-3)',
+              gap: 'var(--space-1)'
             }}>
-              {recommendation.rating}
-              {recommendation.reviews && (
-                <span style={{ opacity: 0.7, fontWeight: 'var(--weight-light)' }}>
-                  {' '}({recommendation.reviews})
-                </span>
-              )}
-            </Text>
-          </div>
-        )}
+              <div style={{ display: 'flex' }}>
+                {[...Array(5)].map((_, i) => (
+                  <motion.span
+                    key={i}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    style={{
+                      fontSize: '1.1rem',
+                      color: i < Math.floor(ratingValue) ? '#FFD700' : 'rgba(255, 255, 255, 0.25)',
+                      textShadow: i < Math.floor(ratingValue) ? '0 0 8px rgba(255, 215, 0, 0.4)' : 'none'
+                    }}
+                  >
+                    ★
+                  </motion.span>
+                ))}
+              </div>
+              <Text style={{
+                marginLeft: 'var(--space-2)',
+                fontSize: '0.95rem',
+                fontWeight: 'var(--weight-medium)'
+              }}>
+                {ratingValue.toFixed(1)}
+                {reviewCount && (
+                  <span style={{ opacity: 0.7, fontWeight: 'var(--weight-light)' }}>
+                    {' '}({reviewCount})
+                  </span>
+                )}
+              </Text>
+            </div>
+          );
+        })()}
 
         {/* Title with elegant font */}
         <Heading
@@ -249,7 +262,11 @@ function RecommendationCard({ recommendation, isSelected, onToggle, category }: 
             )}
             {recommendation.location && (
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                📍 {recommendation.location}
+                📍 {typeof recommendation.location === 'string'
+                  ? recommendation.location
+                  : recommendation.location?.city
+                  ? `${recommendation.location.address ? recommendation.location.address + ', ' : ''}${recommendation.location.city}`
+                  : recommendation.location?.address || 'Location'}
               </span>
             )}
             {recommendation.time && (
