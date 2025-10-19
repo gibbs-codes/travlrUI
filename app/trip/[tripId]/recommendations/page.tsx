@@ -1,799 +1,507 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Background } from '../../../components/Background';
-import { GlassCard } from '../../../components/GlassCard';
-import { Heading, Text, PullQuote } from '../../../components/Typography';
-import { Container, Section } from '../../../components/Layout';
 import { TopBar } from '../../../components/Navigation';
+import { ResultCard } from '../../../components/ResultCard';
+import {
+  FiltersBar,
+  type Filters,
+  type FlightSort,
+} from '../../../components/FiltersBar';
+import { SectionHeader } from '../../../components/SectionHeader';
+import { StickyTripSummary } from '../../../components/StickyTripSummary';
 import { tripAPI } from '../../../lib/api';
+import {
+  normalizeTripResponse,
+  type NormalizedTrip,
+  estimateTripTotal,
+} from '../../../lib/tripAdapters';
+import { formatMoney } from '../../../lib/formatters';
+import type { Flight, Restaurant, Stay, Transit } from '../../../lib/types';
 
-const CATEGORIES = [
-  { id: 'flight', name: 'Flights', icon: '✈️' },
-  { id: 'accommodation', name: 'Accommodations', icon: '🏨' },
-  { id: 'activity', name: 'Activities', icon: '🎭' },
-  { id: 'restaurant', name: 'Restaurants', icon: '🍽️' },
-  { id: 'transportation', name: 'Transportation', icon: '🚗' }
-];
+type SelectionKind = 'flight' | 'stay' | 'transit' | 'restaurant';
 
-function RecommendationCard({ recommendation, isSelected, onToggle, category }: any) {
-  const imageUrl = recommendation.imageUrl || recommendation.image;
-  const [isHovered, setIsHovered] = useState(false);
+const DEFAULT_FILTERS: Filters = {
+  nonstop: false,
+  carryOn: false,
+};
 
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      whileHover={{ y: -12, transition: { duration: 0.4, type: 'spring', stiffness: 300 } }}
-      transition={{ duration: 0.5, type: 'spring' }}
-      onClick={onToggle}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        cursor: 'pointer',
-        position: 'relative',
-        transformOrigin: 'center'
-      }}
-    >
-      <GlassCard
-        interactive
-        style={{
-          border: isSelected
-            ? '2px solid rgba(255, 255, 255, 0.7)'
-            : '1px solid rgba(255, 255, 255, 0.3)',
-          boxShadow: isSelected
-            ? '0 20px 60px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
-            : 'var(--shadow-glass)',
-          background: isSelected
-            ? 'rgba(255, 255, 255, 0.25)'
-            : 'rgba(255, 255, 255, 0.15)',
-          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-          overflow: 'hidden'
-        }}
-      >
-        {/* Image or Gradient with zoom effect */}
-        {imageUrl ? (
-          <div style={{
-            width: '100%',
-            height: '240px',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: 'var(--space-4)',
-            overflow: 'hidden',
-            position: 'relative'
-          }}>
-            <motion.img
-              src={imageUrl}
-              alt={recommendation.name}
-              animate={{ scale: isHovered ? 1.1 : 1 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover'
-              }}
-            />
-            {/* Gradient overlay for text readability */}
-            <div style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: '40%',
-              background: 'linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent)',
-              pointerEvents: 'none'
-            }} />
-          </div>
-        ) : (
-          <div style={{
-            width: '100%',
-            height: '240px',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: 'var(--space-4)',
-            background: `linear-gradient(135deg,
-              var(--color-primary-200) 0%,
-              var(--color-primary-300) 50%,
-              var(--color-primary-400) 100%)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '5rem',
-            boxShadow: 'inset 0 2px 20px rgba(0, 0, 0, 0.1)'
-          }}>
-            {category.icon}
-          </div>
-        )}
-
-        {/* Selection Indicator with enhanced animation */}
-        <AnimatePresence>
-          {isSelected && (
-            <motion.div
-              initial={{ scale: 0, rotate: -180, opacity: 0 }}
-              animate={{
-                scale: 1,
-                rotate: 0,
-                opacity: 1,
-              }}
-              exit={{ scale: 0, rotate: 180, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              style={{
-                position: 'absolute',
-                top: 'var(--space-4)',
-                right: 'var(--space-4)',
-                width: '56px',
-                height: '56px',
-                background: 'linear-gradient(135deg, rgba(76, 175, 80, 0.95) 0%, rgba(56, 142, 60, 0.95) 100%)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '28px',
-                color: 'white',
-                boxShadow: '0 8px 24px rgba(76, 175, 80, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.3)',
-                zIndex: 10
-              }}
-            >
-              ✓
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Price Badge with enhanced styling */}
-        {recommendation.price && (
-          <div style={{
-            position: 'absolute',
-            top: 'var(--space-4)',
-            left: 'var(--space-4)',
-            padding: 'var(--space-2) var(--space-4)',
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: 'var(--radius-lg)',
-            fontWeight: 'var(--weight-semibold)',
-            fontSize: '1.2rem',
-            color: '#333',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            letterSpacing: '0.3px',
-            fontFamily: 'var(--font-display)',
-            zIndex: 10
-          }}>
-            {typeof recommendation.price === 'number'
-              ? `$${recommendation.price.toLocaleString()}`
-              : typeof recommendation.price === 'object' && recommendation.price.amount
-              ? `${recommendation.price.currency || '$'}${recommendation.price.amount.toLocaleString()}`
-              : `$${recommendation.price}`}
-          </div>
-        )}
-
-        {/* Rating with stars */}
-        {recommendation.rating && (() => {
-          const ratingValue = typeof recommendation.rating === 'number'
-            ? recommendation.rating
-            : recommendation.rating?.score || 0;
-          const reviewCount = typeof recommendation.rating === 'object'
-            ? recommendation.rating?.reviewCount
-            : recommendation.reviews;
-
-          return (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: 'var(--space-3)',
-              gap: 'var(--space-1)'
-            }}>
-              <div style={{ display: 'flex' }}>
-                {[...Array(5)].map((_, i) => (
-                  <motion.span
-                    key={i}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.05 }}
-                    style={{
-                      fontSize: '1.1rem',
-                      color: i < Math.floor(ratingValue) ? '#FFD700' : 'rgba(255, 255, 255, 0.25)',
-                      textShadow: i < Math.floor(ratingValue) ? '0 0 8px rgba(255, 215, 0, 0.4)' : 'none'
-                    }}
-                  >
-                    ★
-                  </motion.span>
-                ))}
-              </div>
-              <Text style={{
-                marginLeft: 'var(--space-2)',
-                fontSize: '0.95rem',
-                fontWeight: 'var(--weight-medium)'
-              }}>
-                {ratingValue.toFixed(1)}
-                {reviewCount && (
-                  <span style={{ opacity: 0.7, fontWeight: 'var(--weight-light)' }}>
-                    {' '}({reviewCount})
-                  </span>
-                )}
-              </Text>
-            </div>
-          );
-        })()}
-
-        {/* Title with elegant font */}
-        <Heading
-          level={3}
-          style={{
-            marginBottom: 'var(--space-3)',
-            fontSize: '1.6rem',
-            lineHeight: '1.3',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 'var(--weight-semibold)',
-            letterSpacing: '0.3px'
-          }}
-        >
-          {recommendation.name}
-        </Heading>
-
-        {/* Description */}
-        {recommendation.description && (
-          <Text style={{
-            marginBottom: 'var(--space-4)',
-            opacity: 0.9,
-            lineHeight: '1.7',
-            fontSize: '0.95rem'
-          }}>
-            {recommendation.description}
-          </Text>
-        )}
-
-        {/* Meta Info */}
-        {(recommendation.duration || recommendation.location || recommendation.time) && (
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 'var(--space-3)',
-            fontSize: '0.9rem',
-            opacity: 0.8,
-            marginBottom: 'var(--space-4)',
-            padding: 'var(--space-2) 0',
-            borderTop: '1px solid rgba(255, 255, 255, 0.15)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.15)'
-          }}>
-            {recommendation.duration && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                ⏱ {recommendation.duration}
-              </span>
-            )}
-            {recommendation.location && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                📍 {typeof recommendation.location === 'string'
-                  ? recommendation.location
-                  : recommendation.location?.city
-                  ? `${recommendation.location.address ? recommendation.location.address + ', ' : ''}${recommendation.location.city}`
-                  : recommendation.location?.address || 'Location'}
-              </span>
-            )}
-            {recommendation.time && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                🕒 {recommendation.time}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Add to Trip Button */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          style={{
-            padding: 'var(--space-3) var(--space-4)',
-            background: isSelected
-              ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.3) 0%, rgba(56, 142, 60, 0.2) 100%)'
-              : 'rgba(255, 255, 255, 0.15)',
-            border: `2px solid ${isSelected ? 'rgba(76, 175, 80, 0.5)' : 'rgba(255, 255, 255, 0.25)'}`,
-            borderRadius: 'var(--radius-md)',
-            textAlign: 'center',
-            fontWeight: 'var(--weight-semibold)',
-            fontSize: '1rem',
-            letterSpacing: '0.5px',
-            transition: 'all 0.3s ease',
-            boxShadow: isSelected ? '0 4px 12px rgba(76, 175, 80, 0.2)' : 'none'
-          }}
-        >
-          {isSelected ? '✓ Added to Trip' : '+ Add to Trip'}
-        </motion.div>
-      </GlassCard>
-    </motion.div>
-  );
-}
-
-function CategorySection({ category, recommendations, selections, onToggleSelection, isOpen, onToggleOpen }: any) {
-  const selectedCount = recommendations.filter((r: any) => selections[category.id]?.includes(r.id)).length;
-
-  return (
-    <Section width="wide" style={{ marginBottom: 'var(--space-7)' }}>
-      <motion.div
-        onClick={onToggleOpen}
-        whileHover={{ scale: 1.01, boxShadow: 'var(--shadow-glass-hover)' }}
-        whileTap={{ scale: 0.99 }}
-        style={{
-          cursor: 'pointer',
-          padding: 'var(--space-6) var(--space-7)',
-          background: isOpen
-            ? 'rgba(255, 255, 255, 0.25)'
-            : 'rgba(255, 255, 255, 0.18)',
-          backdropFilter: 'blur(25px)',
-          border: `1px solid ${isOpen ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.25)'}`,
-          borderRadius: 'var(--radius-xl)',
-          marginBottom: 'var(--space-5)',
-          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: 'var(--shadow-glass)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-5)' }}>
-            <motion.span
-              style={{ fontSize: '3.5rem' }}
-              animate={{ scale: isOpen ? 1.1 : 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              {category.icon}
-            </motion.span>
-            <div>
-              <Heading
-                level={2}
-                style={{
-                  marginBottom: 'var(--space-2)',
-                  fontFamily: 'var(--font-display)',
-                  fontSize: '2rem',
-                  letterSpacing: '0.5px'
-                }}
-              >
-                {category.name}
-              </Heading>
-              <Text style={{ fontSize: '1rem', opacity: 0.85, fontWeight: 'var(--weight-light)' }}>
-                {recommendations.length} option{recommendations.length !== 1 ? 's' : ''} available
-                {selectedCount > 0 && (
-                  <span style={{
-                    fontWeight: 'var(--weight-medium)',
-                    color: 'rgba(76, 175, 80, 1)',
-                    marginLeft: 'var(--space-2)'
-                  }}>
-                    • {selectedCount} selected
-                  </span>
-                )}
-              </Text>
-            </div>
-          </div>
-          <motion.span
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.4, type: 'spring', stiffness: 200 }}
-            style={{
-              fontSize: '2.5rem',
-              opacity: 0.8
-            }}
-          >
-            ↓
-          </motion.span>
-        </div>
-      </motion.div>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.5, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-              gap: 'var(--space-6)',
-              marginTop: 'var(--space-5)'
-            }}>
-              {recommendations.map((rec: any, index: number) => (
-                <motion.div
-                  key={rec.id}
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    delay: index * 0.08,
-                    duration: 0.5,
-                    type: 'spring',
-                    stiffness: 100
-                  }}
-                >
-                  <RecommendationCard
-                    recommendation={rec}
-                    category={category}
-                    isSelected={selections[category.id]?.includes(rec.id)}
-                    onToggle={() => onToggleSelection(category.id, rec.id)}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Section>
-  );
-}
+const DEFAULT_SORT: FlightSort = 'price-asc';
 
 export default function Recommendations() {
+  // We reuse the normalized trip shape so cards + summary stay in sync across routes.
   const params = useParams();
   const router = useRouter();
   const tripId = params.tripId as string;
-  const [tripData, setTripData] = useState<any>(null);
-  const [selections, setSelections] = useState<Record<string, string[]>>({
-    flight: [],
-    accommodation: [],
-    activity: [],
-    restaurant: [],
-    transportation: []
-  });
-  const [openSections, setOpenSections] = useState(['flight']);
+
+  const [data, setData] = useState<NormalizedTrip | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFinalizing, setIsFinalizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [sort, setSort] = useState<FlightSort>(DEFAULT_SORT);
 
-  useEffect(() => {
-    fetchTripData();
-  }, [tripId]);
+  const isMounted = useRef(true);
 
-  const fetchTripData = async () => {
+  const flightRef = useRef<HTMLDivElement | null>(null);
+  const stayRef = useRef<HTMLDivElement | null>(null);
+  const transitRef = useRef<HTMLDivElement | null>(null);
+  const restaurantsRef = useRef<HTMLDivElement | null>(null);
+
+  const fetchTrip = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const response = await tripAPI.get(tripId);
-      setTripData(response.data);
-      setError(null);
-    } catch (err: any) {
-      console.error('Error fetching trip data:', err);
-      setError(err.message);
+      if (!isMounted.current) return;
+      const normalized = normalizeTripResponse(response.data);
+      setData(normalized);
+    } catch (error: unknown) {
+      if (!isMounted.current) return;
+      const message = error instanceof Error ? error.message : 'Failed to load recommendations.';
+      setError(message);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, [tripId]);
 
-  const toggleSection = (categoryId: string) => {
-    setOpenSections(prev =>
-      prev.includes(categoryId)
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
+  useEffect(() => {
+    fetchTrip();
+    return () => {
+      isMounted.current = false;
+    };
+  }, [fetchTrip]);
 
-  const toggleSelection = (categoryId: string, recommendationId: string) => {
-    setSelections(prev => {
-      const categorySelections = prev[categoryId] || [];
-      const isSelected = categorySelections.includes(recommendationId);
+  const flights = useMemo(() => {
+    if (!data) return [];
+    return applyFlightFilters(data.flights, filters, sort);
+  }, [data, filters, sort]);
+
+  const select = (
+    kind: SelectionKind,
+    item: Flight | Stay | Transit | Restaurant
+  ) => {
+    // Toggle logic mirrors original behavior but runs on the normalized Trip selection state.
+    setData((current) => {
+      if (!current) return current;
+      const nextSelections = {
+        ...current.trip.selections,
+        restaurants: [...current.trip.selections.restaurants],
+      };
+
+      if (kind === 'restaurant') {
+        const existingIndex = nextSelections.restaurants.findIndex(
+          (restaurant) => restaurant.id === item.id
+        );
+        if (existingIndex >= 0) {
+          nextSelections.restaurants.splice(existingIndex, 1);
+        } else {
+          nextSelections.restaurants.push(item as Restaurant);
+        }
+      } else {
+        if (kind === 'flight') {
+          nextSelections.flight =
+            nextSelections.flight?.id === item.id
+              ? undefined
+              : (item as Flight);
+        } else if (kind === 'stay') {
+          nextSelections.stay =
+            nextSelections.stay?.id === item.id
+              ? undefined
+              : (item as Stay);
+        } else if (kind === 'transit') {
+          nextSelections.transit =
+            nextSelections.transit?.id === item.id
+              ? undefined
+              : (item as Transit);
+        }
+      }
 
       return {
-        ...prev,
-        [categoryId]: isSelected
-          ? categorySelections.filter(id => id !== recommendationId)
-          : [...categorySelections, recommendationId]
+        ...current,
+        trip: {
+          ...current.trip,
+          selections: nextSelections,
+        },
       };
     });
   };
 
-  const calculateTotal = () => {
-    let total = 0;
-    Object.entries(selections).forEach(([category, ids]) => {
-      const categoryRecs = tripData?.recommendations?.[category] || [];
-      ids.forEach(id => {
-        const rec = categoryRecs.find((r: any) => r.id === id);
-        if (rec?.price && typeof rec.price === 'number') {
-          total += rec.price;
-        }
-      });
-    });
-    return total;
+  const handleToggleFilter = (filter: keyof Filters) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filter]: !prev[filter],
+    }));
   };
 
-  const getTotalSelections = () => {
-    return Object.values(selections).reduce((sum, arr) => sum + arr.length, 0);
+  const handleClearFilters = () => {
+    setFilters(DEFAULT_FILTERS);
   };
 
-  const handleFinalize = async () => {
-    setIsFinalizing(true);
+  const handleEdit = (
+    kind: 'flight' | 'stay' | 'transit' | 'restaurants'
+  ) => {
+    const target =
+      kind === 'flight'
+        ? flightRef.current
+        : kind === 'stay'
+        ? stayRef.current
+        : kind === 'transit'
+        ? transitRef.current
+        : restaurantsRef.current;
 
-    try {
-      await tripAPI.selectRecommendations(tripId, {
-        selections,
-        selectedBy: 'user@example.com'
-      });
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
-      router.push(`/trip/${tripId}/overview`);
-    } catch (err: any) {
-      console.error('Error finalizing trip:', err);
-      alert('Failed to finalize trip. Please try again.');
-    } finally {
-      setIsFinalizing(false);
+  const handlePrint = () => {
+    if (typeof window !== 'undefined') {
+      window.print();
     }
   };
 
-  if (isLoading) {
-    return (
-      <>
-        <Background />
-        <TopBar logo="TravlrAPI" navText="home" />
-        <Container>
-          <Section width="narrow">
-            <GlassCard>
-              <div style={{ textAlign: 'center', padding: 'var(--space-10)' }}>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-                  style={{
-                    width: '64px',
-                    height: '64px',
-                    border: '4px solid rgba(255, 255, 255, 0.2)',
-                    borderTopColor: 'var(--color-primary-200)',
-                    borderRightColor: 'var(--color-primary-300)',
-                    borderRadius: '50%',
-                    margin: '0 auto var(--space-5)',
-                    filter: 'drop-shadow(0 0 12px rgba(245, 169, 98, 0.5))'
-                  }}
-                />
-                <Text style={{ fontSize: '1.1rem' }}>Loading your curated recommendations...</Text>
-              </div>
-            </GlassCard>
-          </Section>
-        </Container>
-      </>
-    );
-  }
+  const handleSaveSelections = async () => {
+    if (!data) return;
+    setActionError(null);
+    setIsSaving(true);
 
-  if (error) {
-    return (
-      <>
-        <Background />
-        <TopBar logo="TravlrAPI" navText="home" />
-        <Container>
-          <Section width="narrow">
-            <GlassCard>
-              <div style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
-                <motion.span
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  style={{ fontSize: '5rem', display: 'block', marginBottom: 'var(--space-4)' }}
-                >
-                  ⚠️
-                </motion.span>
-                <Heading level={2} elegant style={{ marginBottom: 'var(--space-3)' }}>
-                  Unable to Load Recommendations
-                </Heading>
-                <Text style={{ marginBottom: 'var(--space-6)', opacity: 0.9 }}>{error}</Text>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={fetchTripData}
-                  style={{
-                    padding: 'var(--space-3) var(--space-6)',
-                    background: 'rgba(255, 255, 255, 0.3)',
-                    border: '1px solid rgba(255, 255, 255, 0.5)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--color-text-primary)',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: 'var(--weight-semibold)',
-                    backdropFilter: 'blur(10px)',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  Try Again
-                </motion.button>
-              </div>
-            </GlassCard>
-          </Section>
-        </Container>
-      </>
-    );
-  }
+    try {
+      await tripAPI.selectRecommendations(tripId, {
+        selections: {
+          flight: data.trip.selections.flight
+            ? [data.trip.selections.flight.id]
+            : [],
+          accommodation: data.trip.selections.stay
+            ? [data.trip.selections.stay.id]
+            : [],
+          transportation: data.trip.selections.transit
+            ? [data.trip.selections.transit.id]
+            : [],
+          restaurant: data.trip.selections.restaurants.map(
+            (restaurant) => restaurant.id
+          ),
+        },
+        selectedBy: 'traveler@travlr.app',
+      });
+      router.push(`/trip/${tripId}/overview`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Could not save selections.';
+      setActionError(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-  const totalSelections = getTotalSelections();
-  const totalPrice = calculateTotal();
+  const total = data ? estimateTripTotal(data.trip) : null;
 
   return (
     <>
       <Background />
-      <TopBar logo="TravlrAPI" navText="home" />
+      <TopBar logo="Travlr" navText="home" />
 
-      <Container>
-        <Section>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <Heading level={1}>Curate Your Perfect Journey</Heading>
-          </motion.div>
-        </Section>
+      <main className="relative z-10">
+        <div className="mx-auto max-w-6xl px-4 pb-16 pt-12 lg:px-6">
+          {/* Two-column grid keeps the summary in view on desktop while preserving a single column on mobile. */}
+          <header className="mb-10 space-y-2">
+            <p className="text-sm uppercase tracking-wide text-slate-500">
+              Trip curation studio
+            </p>
+            <h1 className="text-3xl font-semibold text-slate-900">
+              Tune your itinerary
+            </h1>
+            <p className="text-sm text-slate-500">
+              Pick the flight, stay, transit, and eats that feel right. We&apos;ll
+              keep the total updated on the fly.
+            </p>
+          </header>
 
-        <Section width="narrow">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <PullQuote>
-              Handpick the experiences that will make your trip unforgettable.
-            </PullQuote>
-          </motion.div>
-        </Section>
-
-        {CATEGORIES.map((category, index) => {
-          const recommendations = tripData?.recommendations?.[category.id] || [];
-          if (recommendations.length === 0) return null;
-
-          return (
-            <motion.div
-              key={category.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 + (index * 0.1) }}
-            >
-              <CategorySection
-                category={category}
-                recommendations={recommendations}
-                selections={selections}
-                onToggleSelection={toggleSelection}
-                isOpen={openSections.includes(category.id)}
-                onToggleOpen={() => toggleSection(category.id)}
-              />
-            </motion.div>
-          );
-        })}
-
-        {/* Spacer for sticky footer */}
-        {totalSelections > 0 && <div style={{ height: '180px' }} />}
-
-        {/* Sticky Footer */}
-        <AnimatePresence>
-          {totalSelections > 0 && (
-            <motion.div
-              initial={{ y: 120, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 120, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 30 }}
-              style={{
-                position: 'fixed',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                padding: 'var(--space-6) var(--space-5)',
-                background: 'rgba(255, 255, 255, 0.3)',
-                backdropFilter: 'blur(40px)',
-                borderTop: '2px solid rgba(255, 255, 255, 0.4)',
-                boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.15)',
-                zIndex: 1000
-              }}
-            >
-              <div style={{
-                maxWidth: '1400px',
-                margin: '0 auto',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 'var(--space-5)'
-              }}>
-                <div>
-                  <Text style={{
-                    fontSize: '0.85rem',
-                    marginBottom: 'var(--space-2)',
-                    opacity: 0.85,
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    fontWeight: 'var(--weight-medium)'
-                  }}>
-                    Your Selections
-                  </Text>
-                  <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                    {CATEGORIES.map(cat => {
-                      const count = selections[cat.id]?.length || 0;
-                      if (count === 0) return null;
-                      return (
-                        <motion.div
-                          key={cat.id}
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--space-2)',
-                            padding: 'var(--space-2) var(--space-3)',
-                            background: 'rgba(255, 255, 255, 0.25)',
-                            borderRadius: 'var(--radius-md)',
-                            fontSize: '1rem',
-                            border: '1px solid rgba(255, 255, 255, 0.3)',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          <span style={{ fontSize: '1.2rem' }}>{cat.icon}</span>
-                          <span style={{ fontWeight: 'var(--weight-semibold)' }}>{count}</span>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'center' }}>
-                  <Text style={{
-                    fontSize: '0.85rem',
-                    marginBottom: 'var(--space-2)',
-                    opacity: 0.85,
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    fontWeight: 'var(--weight-medium)'
-                  }}>
-                    Estimated Total
-                  </Text>
-                  <motion.div
-                    key={totalPrice}
-                    initial={{ scale: 1.2 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
-                  >
-                    <Text style={{
-                      fontSize: '2.5rem',
-                      fontWeight: 'var(--weight-semibold)',
-                      fontFamily: 'var(--font-display)',
-                      lineHeight: '1',
-                      textShadow: '0 2px 12px rgba(0, 0, 0, 0.1)'
-                    }}>
-                      ${totalPrice.toLocaleString()}
-                    </Text>
-                  </motion.div>
-                </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.05, boxShadow: '0 12px 40px rgba(0, 0, 0, 0.2)' }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleFinalize}
-                  disabled={isFinalizing}
-                  style={{
-                    padding: 'var(--space-4) var(--space-8)',
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.3) 100%)',
-                    backdropFilter: 'blur(10px)',
-                    border: '2px solid rgba(255, 255, 255, 0.6)',
-                    borderRadius: 'var(--radius-lg)',
-                    color: 'var(--color-text-primary)',
-                    fontSize: '1.2rem',
-                    fontWeight: 'var(--weight-semibold)',
-                    cursor: isFinalizing ? 'not-allowed' : 'pointer',
-                    opacity: isFinalizing ? 0.6 : 1,
-                    transition: 'all 0.3s ease',
-                    letterSpacing: '0.5px',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-                    fontFamily: 'var(--font-body)'
-                  }}
-                >
-                  {isFinalizing ? (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                      <motion.span
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                        style={{
-                          width: '20px',
-                          height: '20px',
-                          border: '2px solid rgba(255, 255, 255, 0.3)',
-                          borderTopColor: 'var(--color-text-primary)',
-                          borderRadius: '50%',
-                          display: 'inline-block'
-                        }}
-                      />
-                      Finalizing...
-                    </span>
-                  ) : (
-                    '✨ Finalize Trip'
-                  )}
-                </motion.button>
-              </div>
-            </motion.div>
+          {error && !data && (
+            <ErrorBanner message={error} onRetry={fetchTrip} />
           )}
-        </AnimatePresence>
-      </Container>
+
+          <div className="flex flex-col gap-12 lg:grid lg:grid-cols-[1fr_360px] lg:gap-6">
+            <div className="space-y-12">
+              <section ref={flightRef} id="flights">
+                <SectionHeader
+                  title="Flights"
+                  description="Choose the vibe that gets you there."
+                  actions={
+                    <FiltersBar
+                      sort={sort}
+                      filters={filters}
+                      onSortChange={setSort}
+                      onToggleFilter={handleToggleFilter}
+                    />
+                  }
+                />
+
+                <div className="mt-5 space-y-3">
+                  {isLoading && <SkeletonStack />}
+                  {!isLoading && flights.length === 0 && (
+                    <EmptyState onClear={handleClearFilters} />
+                  )}
+                  {!isLoading &&
+                    flights.map((flight) => (
+                      <ResultCard
+                        key={flight.id}
+                        kind="flight"
+                        data={flight}
+                        isSelected={
+                          data?.trip.selections.flight?.id === flight.id
+                        }
+                        onSelect={() => select('flight', flight)}
+                      />
+                    ))}
+                </div>
+              </section>
+
+              <section ref={stayRef} id="stays">
+                <SectionHeader
+                  title="Stay vibes"
+                  description="A cozy home-base to match the mood."
+                />
+                <div className="mt-5 space-y-3">
+                  {isLoading && <SkeletonStack />}
+                  {!isLoading &&
+                    data?.stays.map((stay) => (
+                      <ResultCard
+                        key={stay.id}
+                        kind="stay"
+                        data={stay}
+                        isSelected={data.trip.selections.stay?.id === stay.id}
+                        onSelect={() => select('stay', stay)}
+                      />
+                    ))}
+                  {!isLoading && (data?.stays.length ?? 0) === 0 && (
+                    <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
+                      Nothing matches just yet. Loosen filters or check back
+                      after we fetch more stays.
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              <section ref={transitRef} id="transit">
+                <SectionHeader
+                  title="Getting around"
+                  description="Pick the transit plan that feels easy."
+                />
+                <div className="mt-5 space-y-3">
+                  {isLoading && <SkeletonStack />}
+                  {!isLoading &&
+                    data?.transit.map((option) => (
+                      <ResultCard
+                        key={option.id}
+                        kind="transit"
+                        data={option}
+                        isSelected={
+                          data.trip.selections.transit?.id === option.id
+                        }
+                        onSelect={() => select('transit', option)}
+                      />
+                    ))}
+                  {!isLoading && (data?.transit.length ?? 0) === 0 && (
+                    <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
+                      We&apos;ll add transit options as soon as we find good matches.
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              <section ref={restaurantsRef} id="restaurants">
+                <SectionHeader
+                  title="Food & sips"
+                  description="Save the spots you want to taste."
+                />
+                <div className="mt-5 space-y-3">
+                  {isLoading && <SkeletonStack />}
+                  {!isLoading &&
+                    data?.restaurants.map((restaurant) => (
+                      <ResultCard
+                        key={restaurant.id}
+                        kind="food"
+                        data={restaurant}
+                        isSelected={data.trip.selections.restaurants.some(
+                          (saved) => saved.id === restaurant.id
+                        )}
+                        onSelect={() => select('restaurant', restaurant)}
+                      />
+                    ))}
+                  {!isLoading && (data?.restaurants.length ?? 0) === 0 && (
+                    <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
+                      No eats yet — once they land you can save your shortlist here.
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              <footer className="rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm">
+                {actionError && (
+                  <p className="mb-3 text-sm text-rose-500">{actionError}</p>
+                )}
+                <div className="flex flex-wrap items-center gap-3">
+                  {total && (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                      Estimated total · {formatMoney(total)}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSaveSelections}
+                    disabled={isSaving || !data}
+                    className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    {isSaving ? 'Saving...' : 'Save & view overview'}
+                  </button>
+                </div>
+              </footer>
+            </div>
+
+            <div className="space-y-6 lg:sticky lg:top-6 lg:h-fit">
+              {data ? (
+                <StickyTripSummary
+                  trip={data.trip}
+                  onEdit={handleEdit}
+                  onPrint={handlePrint}
+                />
+              ) : (
+                <SummarySkeleton />
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
     </>
+  );
+}
+
+function applyFlightFilters(
+  flights: Flight[],
+  filters: Filters,
+  sort: FlightSort
+): Flight[] {
+  const filtered = flights.filter((flight) => {
+    if (filters.nonstop && flight.stops > 0) return false;
+    if (filters.carryOn && !flight.baggage?.carryOn) return false;
+    return true;
+  });
+
+  const sorter = createFlightComparator(sort);
+  return [...filtered].sort(sorter);
+}
+
+function createFlightComparator(sort: FlightSort) {
+  switch (sort) {
+    case 'price-asc':
+      return (a: Flight, b: Flight) =>
+        (a.price?.amount ?? Number.POSITIVE_INFINITY) -
+        (b.price?.amount ?? Number.POSITIVE_INFINITY);
+    case 'price-desc':
+      return (a: Flight, b: Flight) =>
+        (b.price?.amount ?? Number.NEGATIVE_INFINITY) -
+        (a.price?.amount ?? Number.NEGATIVE_INFINITY);
+    case 'duration':
+      return (a: Flight, b: Flight) =>
+        durationMinutes(a.durationISO) - durationMinutes(b.durationISO);
+    case 'depart':
+      return (a: Flight, b: Flight) =>
+        departureValue(a.depart) - departureValue(b.depart);
+    default:
+      return () => 0;
+  }
+}
+
+function durationMinutes(iso: string | undefined) {
+  if (!iso) return Number.POSITIVE_INFINITY;
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!match) return Number.POSITIVE_INFINITY;
+  const hours = Number(match[1] ?? 0);
+  const minutes = Number(match[2] ?? 0);
+  return hours * 60 + minutes;
+}
+
+function departureValue(iso: string | undefined) {
+  if (!iso) return Number.POSITIVE_INFINITY;
+  const value = new Date(iso).getTime();
+  return Number.isNaN(value) ? Number.POSITIVE_INFINITY : value;
+}
+
+function SkeletonStack({ rows = 3 }: { rows?: number }) {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: rows }).map((_, index) => (
+        <div
+          key={index}
+          className="h-32 animate-pulse rounded-2xl border border-black/5 bg-white/40"
+        />
+      ))}
+    </div>
+  );
+}
+
+function SummarySkeleton() {
+  return (
+    <div className="space-y-4 rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm">
+      <div className="space-y-2">
+        <div className="h-3 w-24 animate-pulse rounded-full bg-slate-200" />
+        <div className="h-4 w-40 animate-pulse rounded-full bg-slate-200" />
+        <div className="h-3 w-32 animate-pulse rounded-full bg-slate-200" />
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-3 rounded-xl border border-slate-200/70 bg-white/60 p-3"
+          >
+            <div className="h-8 w-8 rounded-full bg-slate-200" />
+            <div className="h-3 flex-1 animate-pulse rounded-full bg-slate-200" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-2 rounded-xl bg-slate-900/10 p-4">
+        <div className="h-3 w-24 animate-pulse rounded-full bg-slate-200" />
+        <div className="h-4 w-32 animate-pulse rounded-full bg-slate-300" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ onClear }: { onClear: () => void }) {
+  return (
+    <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
+      <p>Nothing matches your filters right now.</p>
+      <button
+        type="button"
+        onClick={onClear}
+        className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-100"
+      >
+        Clear filters →
+      </button>
+    </div>
+  );
+}
+
+function ErrorBanner({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-700">
+      <p>{message}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
+      >
+        Try again
+      </button>
+    </div>
   );
 }

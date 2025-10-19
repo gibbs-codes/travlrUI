@@ -113,20 +113,20 @@ export default function Create() {
           children: 0,
           infants: 0
         },
-        // Send budget at BOTH locations
-        budget: {
-          total:  1500
-        },
         preferences: {
-          interests: formData.interests || [],
-          budget: {
-            total:  1500
-          }
+          interests: formData.interests || []
         },
         collaboration: {
           createdBy: 'user@example.com'
         }
       };
+
+      // Only include budget if user provided one
+      if (formData.budget && parseFloat(formData.budget) > 0) {
+        const budgetTotal = parseFloat(formData.budget);
+        requestBody.budget = { total: budgetTotal };
+        requestBody.preferences.budget = { total: budgetTotal };
+      }
 
       const response = await fetch('http://jamess-mac-mini:3006/api/trip/create', {
         method: 'POST',

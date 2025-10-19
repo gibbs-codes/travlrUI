@@ -1,629 +1,452 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import { Background } from '../../../components/Background';
-import { GlassCard } from '../../../components/GlassCard';
-import { Heading, Text } from '../../../components/Typography';
-import { Container, Section } from '../../../components/Layout';
 import { TopBar } from '../../../components/Navigation';
+import { StickyTripSummary } from '../../../components/StickyTripSummary';
+import { SectionHeader } from '../../../components/SectionHeader';
 import { tripAPI } from '../../../lib/api';
-
-const CATEGORIES = [
-  { id: 'flight', name: 'Your Flight', icon: '✈️', singularName: 'Flight' },
-  { id: 'accommodation', name: 'Your Accommodations', icon: '🏨', singularName: 'Accommodation' },
-  { id: 'activity', name: 'Your Activities', icon: '🎭', singularName: 'Activity' },
-  { id: 'restaurant', name: 'Your Restaurants', icon: '🍽️', singularName: 'Restaurant' },
-  { id: 'transportation', name: 'Your Transportation', icon: '🚗', singularName: 'Transportation' }
-];
-
-function SelectedItemCard({ item, category, index }: any) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -30 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.08, type: 'spring', stiffness: 100 }}
-      whileHover={{ x: 8, transition: { duration: 0.2 } }}
-      style={{
-        padding: 'var(--space-5)',
-        background: 'rgba(255, 255, 255, 0.12)',
-        border: '1px solid rgba(255, 255, 255, 0.25)',
-        borderRadius: 'var(--radius-lg)',
-        marginBottom: 'var(--space-4)',
-        transition: 'all 0.3s ease',
-        cursor: 'default'
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-5)', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '250px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-            <span style={{ fontSize: '2rem', lineHeight: '1' }}>{category.icon}</span>
-            <Heading level={4} style={{
-              fontSize: '1.4rem',
-              marginBottom: 0,
-              fontFamily: 'var(--font-display)',
-              fontWeight: 'var(--weight-semibold)',
-              letterSpacing: '0.3px'
-            }}>
-              {item.name}
-            </Heading>
-          </div>
-
-          {item.rating && (
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--space-3)', gap: 'var(--space-1)' }}>
-              <div style={{ display: 'flex' }}>
-                {[...Array(5)].map((_, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      fontSize: '1rem',
-                      color: i < Math.floor(item.rating) ? '#FFD700' : 'rgba(255, 255, 255, 0.25)',
-                      textShadow: i < Math.floor(item.rating) ? '0 0 8px rgba(255, 215, 0, 0.4)' : 'none'
-                    }}
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
-              <Text style={{ marginLeft: 'var(--space-2)', fontSize: '0.9rem', fontWeight: 'var(--weight-medium)' }}>
-                {item.rating}
-                {item.reviews && (
-                  <span style={{ opacity: 0.7, fontWeight: 'var(--weight-light)' }}>
-                    {' '}({item.reviews})
-                  </span>
-                )}
-              </Text>
-            </div>
-          )}
-
-          {item.description && (
-            <Text style={{ fontSize: '0.95rem', opacity: 0.9, marginBottom: 'var(--space-3)', lineHeight: '1.7' }}>
-              {item.description}
-            </Text>
-          )}
-
-          {(item.duration || item.location || item.time) && (
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 'var(--space-3)',
-              fontSize: '0.9rem',
-              opacity: 0.8,
-              marginTop: 'var(--space-3)',
-              paddingTop: 'var(--space-3)',
-              borderTop: '1px solid rgba(255, 255, 255, 0.15)'
-            }}>
-              {item.duration && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  ⏱ {item.duration}
-                </span>
-              )}
-              {item.location && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  📍 {item.location}
-                </span>
-              )}
-              {item.time && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  🕒 {item.time}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {item.price && (
-          <div style={{
-            padding: 'var(--space-3) var(--space-5)',
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: 'var(--radius-lg)',
-            fontWeight: 'var(--weight-semibold)',
-            fontSize: '1.4rem',
-            fontFamily: 'var(--font-display)',
-            whiteSpace: 'nowrap',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-          }}>
-            ${typeof item.price === 'number' ? item.price.toLocaleString() : item.price}
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-}
+import {
+  normalizeTripResponse,
+  type NormalizedTrip,
+  estimateTripTotal,
+} from '../../../lib/tripAdapters';
+import {
+  formatDateTime,
+  formatDuration,
+  formatMoney,
+  formatRoute,
+  priceLevel,
+  stars,
+} from '../../../lib/formatters';
+import type { Flight, Restaurant, Stay, Transit } from '../../../lib/types';
 
 export default function Overview() {
+  // This page stays as the authoritative “receipt”, so we normalize data once and
+  // feed it through consistent helpers/components used by recommendations too.
   const params = useParams();
   const router = useRouter();
   const tripId = params.tripId as string;
-  const [tripData, setTripData] = useState<any>(null);
+
+  const [data, setData] = useState<NormalizedTrip | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchTripData();
-  }, [tripId]);
+  const isMounted = useRef(true);
 
-  const fetchTripData = async () => {
+  const fetchTrip = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const response = await tripAPI.get(tripId);
-      setTripData(response.data);
-      setError(null);
-    } catch (err: any) {
-      console.error('Error fetching trip data:', err);
-      setError(err.message);
+      if (!isMounted.current) return;
+      const normalized = normalizeTripResponse(response.data);
+      setData(normalized);
+    } catch (error: unknown) {
+      if (!isMounted.current) return;
+      const message =
+        error instanceof Error ? error.message : 'Failed to load your trip overview.';
+      setError(message);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [tripId]);
+
+  useEffect(() => {
+    fetchTrip();
+    return () => {
+      isMounted.current = false;
+    };
+  }, [fetchTrip]);
+
+  const handleEdit = (kind: 'flight' | 'stay' | 'transit' | 'restaurants') => {
+    const anchor =
+      kind === 'flight'
+        ? '#flights'
+        : kind === 'stay'
+        ? '#stays'
+        : kind === 'transit'
+        ? '#transit'
+        : '#restaurants';
+    router.push(`/trip/${tripId}/recommendations${anchor}`);
+  };
+
+  const handlePrint = () => {
+    if (typeof window !== 'undefined') {
+      window.print();
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const calculateTotalCost = () => {
-    let total = 0;
-    if (!tripData?.selectedRecommendations) return 0;
-
-    Object.values(tripData.selectedRecommendations).forEach((items: any) => {
-      if (Array.isArray(items)) {
-        items.forEach(item => {
-          if (item?.price && typeof item.price === 'number') {
-            total += item.price;
-          }
-        });
-      }
-    });
-
-    return total;
-  };
-
-  const getTotalSelections = () => {
-    if (!tripData?.selectedRecommendations) return 0;
-    return Object.values(tripData.selectedRecommendations).reduce((sum: number, items: any) => {
-      return sum + (Array.isArray(items) ? items.length : 0);
-    }, 0);
-  };
-
-  if (isLoading) {
-    return (
-      <>
-        <Background />
-        <TopBar logo="TravlrAPI" navText="home" />
-        <Container>
-          <Section width="narrow">
-            <GlassCard>
-              <div style={{ textAlign: 'center', padding: 'var(--space-10)' }}>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-                  style={{
-                    width: '64px',
-                    height: '64px',
-                    border: '4px solid rgba(255, 255, 255, 0.2)',
-                    borderTopColor: 'var(--color-primary-200)',
-                    borderRightColor: 'var(--color-primary-300)',
-                    borderRadius: '50%',
-                    margin: '0 auto var(--space-5)',
-                    filter: 'drop-shadow(0 0 12px rgba(245, 169, 98, 0.5))'
-                  }}
-                />
-                <Text style={{ fontSize: '1.1rem' }}>Loading your trip overview...</Text>
-              </div>
-            </GlassCard>
-          </Section>
-        </Container>
-      </>
-    );
-  }
-
-  if (error) {
-    return (
-      <>
-        <Background />
-        <TopBar logo="TravlrAPI" navText="home" />
-        <Container>
-          <Section width="narrow">
-            <GlassCard>
-              <div style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
-                <motion.span
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  style={{ fontSize: '5rem', display: 'block', marginBottom: 'var(--space-4)' }}
-                >
-                  ⚠️
-                </motion.span>
-                <Heading level={2} elegant style={{ marginBottom: 'var(--space-3)' }}>
-                  Unable to Load Trip
-                </Heading>
-                <Text style={{ marginBottom: 'var(--space-6)', opacity: 0.9 }}>{error}</Text>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={fetchTripData}
-                  style={{
-                    padding: 'var(--space-3) var(--space-6)',
-                    background: 'rgba(255, 255, 255, 0.3)',
-                    border: '1px solid rgba(255, 255, 255, 0.5)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--color-text-primary)',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: 'var(--weight-semibold)',
-                    backdropFilter: 'blur(10px)',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  Try Again
-                </motion.button>
-              </div>
-            </GlassCard>
-          </Section>
-        </Container>
-      </>
-    );
-  }
-
-  const totalCost = calculateTotalCost();
-  const totalSelections = getTotalSelections();
+  const trip = data?.trip;
+  const selections = trip?.selections;
+  const total = trip ? estimateTripTotal(trip) : null;
+  const hasAnySelection =
+    Boolean(selections?.flight) ||
+    Boolean(selections?.stay) ||
+    Boolean(selections?.transit);
+  const grandTotalLabel =
+    total && total.amount > 0
+      ? formatMoney(total)
+      : hasAnySelection
+      ? 'Pending total'
+      : total
+      ? formatMoney(total)
+      : '—';
 
   return (
     <>
       <Background />
-      <TopBar logo="TravlrAPI" navText="home" />
+      <TopBar logo="Travlr" navText="home" />
 
-      <Container>
-        {/* Trip Header */}
-        <Section width="wide">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <GlassCard style={{
-              padding: 'var(--space-8) var(--space-7)',
-              marginBottom: 'var(--space-7)',
-              background: 'rgba(255, 255, 255, 0.25)',
-              border: '2px solid rgba(255, 255, 255, 0.4)',
-              boxShadow: 'var(--shadow-glass-hover)'
-            }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                flexWrap: 'wrap',
-                gap: 'var(--space-7)'
-              }}>
-                <div style={{ flex: 1, minWidth: '320px' }}>
-                  <Text style={{
-                    fontSize: '0.9rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '2px',
-                    opacity: 0.75,
-                    marginBottom: 'var(--space-3)',
-                    fontWeight: 'var(--weight-medium)'
-                  }}>
-                    Your Journey To
-                  </Text>
-                  <Heading level={1} style={{
-                    fontSize: '3.5rem',
-                    marginBottom: 'var(--space-5)',
-                    fontFamily: 'var(--font-display)',
-                    lineHeight: '1.1',
-                    letterSpacing: '0.5px'
-                  }}>
-                    {typeof tripData?.destination === 'string'
-                      ? tripData.destination
-                      : tripData?.destination?.name || 'Your Destination'}
-                  </Heading>
+      <main className="relative z-10">
+        <div className="mx-auto max-w-6xl px-4 pb-16 pt-12 lg:px-6">
+          {/* Layout note: two-column grid mirrors recommendations so the summary stays anchored. */}
+          <header className="mb-10 space-y-2">
+            <p className="text-sm uppercase tracking-wide text-slate-500">
+              Trip overview
+            </p>
+            <h1 className="text-3xl font-semibold text-slate-900">
+              Your curated itinerary
+            </h1>
+            <p className="text-sm text-slate-500">
+              A quick snapshot of what&apos;s locked in and what&apos;s still open.
+            </p>
+          </header>
 
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                    gap: 'var(--space-5)',
-                    marginTop: 'var(--space-6)'
-                  }}>
-                    {tripData?.departureDate && (
-                      <div>
-                        <Text style={{ fontSize: '0.8rem', opacity: 0.7, marginBottom: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                          Departure
-                        </Text>
-                        <Text style={{ fontSize: '1.15rem', fontWeight: 'var(--weight-semibold)', lineHeight: '1.4' }}>
-                          {formatDate(tripData.departureDate)}
-                        </Text>
-                      </div>
-                    )}
+          {error && !trip && (
+            <div className="mb-10 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-700">
+              <p>{error}</p>
+              <button
+                type="button"
+                onClick={fetchTrip}
+                className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
+              >
+                Try again
+              </button>
+            </div>
+          )}
 
-                    {tripData?.returnDate && (
-                      <div>
-                        <Text style={{ fontSize: '0.8rem', opacity: 0.7, marginBottom: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                          Return
-                        </Text>
-                        <Text style={{ fontSize: '1.15rem', fontWeight: 'var(--weight-semibold)', lineHeight: '1.4' }}>
-                          {formatDate(tripData.returnDate)}
-                        </Text>
-                      </div>
-                    )}
-
-                    {tripData?.travelers && (
-                      <div>
-                        <Text style={{ fontSize: '0.8rem', opacity: 0.7, marginBottom: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                          Travelers
-                        </Text>
-                        <Text style={{ fontSize: '1.15rem', fontWeight: 'var(--weight-semibold)', lineHeight: '1.4' }}>
-                          {tripData.travelers?.count || tripData.travelers} {(tripData.travelers?.count || tripData.travelers) === 1 ? 'Person' : 'People'}
-                        </Text>
-                      </div>
-                    )}
-
-                    {tripData?.origin && (
-                      <div>
-                        <Text style={{ fontSize: '0.8rem', opacity: 0.7, marginBottom: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                          From
-                        </Text>
-                        <Text style={{ fontSize: '1.15rem', fontWeight: 'var(--weight-semibold)', lineHeight: '1.4' }}>
-                          {typeof tripData.origin === 'string'
-                            ? tripData.origin
-                            : tripData.origin?.name || 'Origin'}
-                        </Text>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                  style={{
-                    padding: 'var(--space-7) var(--space-6)',
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%)',
-                    backdropFilter: 'blur(15px)',
-                    borderRadius: 'var(--radius-xl)',
-                    textAlign: 'center',
-                    border: '2px solid rgba(255, 255, 255, 0.35)',
-                    minWidth: '240px',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
-                  }}
-                >
-                  <Text style={{
-                    fontSize: '0.85rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '2px',
-                    opacity: 0.8,
-                    marginBottom: 'var(--space-3)',
-                    fontWeight: 'var(--weight-medium)'
-                  }}>
-                    Total Cost
-                  </Text>
-                  <Text style={{
-                    fontSize: '4rem',
-                    fontWeight: 'var(--weight-semibold)',
-                    fontFamily: 'var(--font-display)',
-                    lineHeight: '1',
-                    textShadow: '0 2px 16px rgba(0, 0, 0, 0.15)'
-                  }}>
-                    ${totalCost.toLocaleString()}
-                  </Text>
-                  {totalSelections > 0 && (
-                    <Text style={{
-                      fontSize: '0.85rem',
-                      opacity: 0.7,
-                      marginTop: 'var(--space-3)'
-                    }}>
-                      {totalSelections} {totalSelections === 1 ? 'item' : 'items'} selected
-                    </Text>
+          <div className="flex flex-col gap-12 lg:grid lg:grid-cols-[1fr_360px] lg:gap-6">
+            <div className="space-y-12">
+              <section>
+                <SectionHeader
+                  title="Seating chart for your trip"
+                  description="Everything you&apos;ve selected so far."
+                />
+                <div className="mt-5 space-y-4">
+                  {isLoading && <OverviewSkeleton />}
+                  {!isLoading && trip && selections && (
+                    <ul className="space-y-3">
+                      <ChecklistItem
+                        checked={Boolean(selections.flight)}
+                        label={
+                          selections.flight
+                            ? describeFlight(selections.flight)
+                            : 'Flight: choose the option that fits best.'
+                        }
+                        prefix="Flight"
+                        onEdit={() => handleEdit('flight')}
+                      />
+                      <ChecklistItem
+                        checked={Boolean(selections.stay)}
+                        label={
+                          selections.stay
+                            ? describeStay(selections.stay)
+                            : 'Stay: pick a place to land.'
+                        }
+                        prefix="Stay"
+                        onEdit={() => handleEdit('stay')}
+                      />
+                      <ChecklistItem
+                        checked={Boolean(selections.transit)}
+                        label={
+                          selections.transit
+                            ? describeTransit(selections.transit)
+                            : 'Transit: add a getting-around plan when you&apos;re ready.'
+                        }
+                        prefix="Transit"
+                        onEdit={() => handleEdit('transit')}
+                      />
+                      <ChecklistItem
+                        checked={selections.restaurants.length > 0}
+                        label={
+                          selections.restaurants.length > 0
+                            ? describeRestaurants(selections.restaurants)
+                            : 'Restaurants: nothing saved yet.'
+                        }
+                        prefix="Restaurants"
+                        onEdit={() => handleEdit('restaurants')}
+                      />
+                    </ul>
                   )}
-                </motion.div>
-              </div>
-            </GlassCard>
-          </motion.div>
-        </Section>
+                </div>
+              </section>
 
-        {/* Selected Items by Category */}
-        {totalSelections === 0 ? (
-          <Section width="narrow">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <GlassCard style={{ textAlign: 'center', padding: 'var(--space-10)' }}>
-                <span style={{ fontSize: '5rem', display: 'block', marginBottom: 'var(--space-4)' }}>📋</span>
-                <Heading level={2} elegant style={{ marginBottom: 'var(--space-3)' }}>
-                  No Selections Yet
-                </Heading>
-                <Text style={{ marginBottom: 'var(--space-6)', fontSize: '1.05rem', opacity: 0.85 }}>
-                  Start curating your perfect journey by selecting recommendations.
-                </Text>
-                <motion.button
-                  whileHover={{ scale: 1.05, boxShadow: 'var(--shadow-glass-hover)' }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push(`/trip/${tripId}/recommendations`)}
-                  style={{
-                    padding: 'var(--space-4) var(--space-7)',
-                    background: 'rgba(255, 255, 255, 0.3)',
-                    border: '2px solid rgba(255, 255, 255, 0.5)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--color-text-primary)',
-                    cursor: 'pointer',
-                    fontSize: '1.1rem',
-                    fontWeight: 'var(--weight-semibold)',
-                    backdropFilter: 'blur(10px)',
-                    letterSpacing: '0.5px',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  Browse Recommendations →
-                </motion.button>
-              </GlassCard>
-            </motion.div>
-          </Section>
-        ) : (
-          CATEGORIES.map((category, categoryIndex) => {
-            const items = tripData?.selectedRecommendations?.[category.id] || [];
-            if (!items || items.length === 0) return null;
+              <section>
+                <SectionHeader
+                  title="Budget snapshot"
+                  description="Only priced picks count toward the total."
+                />
+                <div className="mt-5 space-y-3 rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm">
+                  {isLoading && <BudgetSkeleton />}
+                  {!isLoading && selections && (
+                    <>
+                      <BudgetRow
+                        label="Flight"
+                        amount={selections.flight?.price ?? null}
+                      />
+                      <BudgetRow
+                        label="Stay"
+                        amount={selections.stay?.total ?? null}
+                      />
+                      <BudgetRow
+                        label="Transit"
+                        amount={selections.transit?.fare ?? null}
+                      />
+                      <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
+                        <span className="text-sm font-semibold text-slate-700">
+                          Grand total
+                        </span>
+                        <span className="text-lg font-semibold text-slate-900">
+                          {grandTotalLabel}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
 
-            return (
-              <Section key={category.id} width="wide">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 + (categoryIndex * 0.1) }}
-                >
-                  <GlassCard style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-6)' }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-4)',
-                      marginBottom: 'var(--space-6)',
-                      paddingBottom: 'var(--space-4)',
-                      borderBottom: '2px solid rgba(255, 255, 255, 0.2)'
-                    }}>
-                      <span style={{ fontSize: '3rem', lineHeight: '1' }}>{category.icon}</span>
-                      <Heading level={2} style={{
-                        fontSize: '2rem',
-                        marginBottom: 0,
-                        fontFamily: 'var(--font-display)',
-                        letterSpacing: '0.5px'
-                      }}>
-                        {category.name}
-                      </Heading>
-                      <Text style={{
-                        marginLeft: 'auto',
-                        fontSize: '0.95rem',
-                        opacity: 0.75,
-                        fontWeight: 'var(--weight-medium)',
-                        padding: 'var(--space-2) var(--space-3)',
-                        background: 'rgba(255, 255, 255, 0.15)',
-                        borderRadius: 'var(--radius-md)'
-                      }}>
-                        {items.length} {items.length === 1 ? 'item' : 'items'}
-                      </Text>
-                    </div>
+              <section>
+                <SectionHeader
+                  title="Trip basics"
+                  description="Quick facts you can share."
+                />
+                <div className="mt-5 grid gap-3 rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm md:grid-cols-2">
+                  {isLoading && <BasicsSkeleton />}
+                  {!isLoading && trip && (
+                    <>
+                      <Detail label="Destination" value={trip.destination} />
+                      <Detail label="Depart" value={formatDateTime(trip.start)} />
+                      <Detail label="Origin" value={trip.origin} />
+                      <Detail label="Return" value={formatDateTime(trip.end)} />
+                      <Detail
+                        label="Travelers"
+                        value={`${trip.travelers} traveler${
+                          trip.travelers === 1 ? '' : 's'
+                        }`}
+                      />
+                    </>
+                  )}
+                </div>
+              </section>
 
-                    <div>
-                      {items.map((item: any, index: number) => (
-                        <SelectedItemCard key={item.id || index} item={item} category={category} index={index} />
-                      ))}
-                    </div>
-                  </GlassCard>
-                </motion.div>
-              </Section>
-            );
-          })
-        )}
+              {selections && selections.restaurants.length > 0 && (
+                <section>
+                  <SectionHeader
+                    title="Saved restaurants"
+                    description="Your edible must-haves."
+                  />
+                  <div className="mt-5 grid gap-3 md:grid-cols-2">
+                    {selections.restaurants.map((restaurant) => (
+                      <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
 
-        {/* Action Buttons */}
-        <Section width="narrow">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-            style={{
-              display: 'flex',
-              gap: 'var(--space-4)',
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              marginTop: 'var(--space-7)',
-              marginBottom: 'var(--space-10)'
-            }}
-          >
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 12px 40px rgba(0, 0, 0, 0.2)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => router.push(`/trip/${tripId}/recommendations`)}
-              style={{
-                padding: 'var(--space-4) var(--space-7)',
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.25) 100%)',
-                backdropFilter: 'blur(10px)',
-                border: '2px solid rgba(255, 255, 255, 0.5)',
-                borderRadius: 'var(--radius-lg)',
-                color: 'var(--color-text-primary)',
-                fontSize: '1.15rem',
-                fontWeight: 'var(--weight-semibold)',
-                cursor: 'pointer',
-                letterSpacing: '0.5px',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              ← Edit Selections
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 12px 40px rgba(0, 0, 0, 0.2)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => window.print()}
-              style={{
-                padding: 'var(--space-4) var(--space-7)',
-                background: 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.4)',
-                borderRadius: 'var(--radius-lg)',
-                color: 'var(--color-text-primary)',
-                fontSize: '1.15rem',
-                fontWeight: 'var(--weight-medium)',
-                cursor: 'pointer',
-                letterSpacing: '0.5px',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              🖨 Print Itinerary
-            </motion.button>
-          </motion.div>
-        </Section>
-
-        {/* Trip Reference */}
-        <Section width="narrow">
-          <Text style={{
-            textAlign: 'center',
-            fontSize: '0.8rem',
-            opacity: 0.5,
-            marginBottom: 'var(--space-8)',
-            fontFamily: 'monospace',
-            letterSpacing: '0.5px'
-          }}>
-            Trip ID: {tripId}
-          </Text>
-        </Section>
-      </Container>
-
-      {/* Print Styles */}
-      <style jsx global>{`
-        @media print {
-          body {
-            background: white !important;
-          }
-          [class*="Background"] {
-            display: none !important;
-          }
-          [class*="TopBar"] {
-            display: none !important;
-          }
-          button {
-            display: none !important;
-          }
-          [class*="GlassCard"] {
-            background: white !important;
-            border: 1px solid #ddd !important;
-            box-shadow: none !important;
-            backdrop-filter: none !important;
-            page-break-inside: avoid;
-          }
-          * {
-            color: #000 !important;
-          }
-        }
-      `}</style>
+            <div className="space-y-6 lg:sticky lg:top-6 lg:h-fit">
+              {trip ? (
+                <StickyTripSummary
+                  trip={trip}
+                  onEdit={handleEdit}
+                  onPrint={handlePrint}
+                />
+              ) : (
+                <SummarySkeleton />
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
     </>
+  );
+}
+
+function describeFlight(flight: Flight) {
+  return `Flight: ${flight.carrier} ${flight.flightNo} · ${formatDateTime(
+    flight.depart
+  )} → ${formatDateTime(flight.arrive)} · ${formatDuration(
+    flight.durationISO
+  )} · ${formatMoney(flight.price)}`;
+}
+
+function describeStay(stay: Stay) {
+  const parts = [
+    stay.name,
+    `${stay.nights} night${stay.nights === 1 ? '' : 's'}`,
+    stay.freeCancel ? 'Free cancel' : null,
+    stay.rating ? stars(stay.rating) : null,
+    formatMoney(stay.total),
+  ].filter(Boolean);
+  return `Stay: ${parts.join(' · ')}`;
+}
+
+function describeTransit(transit: Transit) {
+  const parts = [
+    formatRoute(transit.chain),
+    formatDuration(transit.durationISO),
+    transit.fare ? formatMoney(transit.fare) : null,
+  ].filter(Boolean);
+  return `Transit: ${parts.join(' · ')}`;
+}
+
+function describeRestaurants(restaurants: Restaurant[]) {
+  return `Restaurants: ${restaurants.length} saved · ${restaurants
+    .slice(0, 3)
+    .map((restaurant) => restaurant.name)
+    .join(', ')}`;
+}
+
+function ChecklistItem({
+  checked,
+  label,
+  prefix,
+  onEdit,
+}: {
+  checked: boolean;
+  label: string;
+  prefix: string;
+  onEdit: () => void;
+}) {
+  return (
+    <li className="flex items-start gap-3 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm">
+      <span className="mt-0.5 text-lg">{checked ? '✅' : '☐'}</span>
+      <div className="flex-1 space-y-1">
+        <p className="text-sm text-slate-900">{label}</p>
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-xs font-semibold text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+        >
+          Edit {prefix.toLowerCase()}
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function BudgetRow({
+  label,
+  amount,
+}: {
+  label: string;
+  amount: { amount: number; currency: 'USD' } | null | undefined;
+}) {
+  return (
+    <div className="flex items-center justify-between text-sm text-slate-600">
+      <span>{label}</span>
+      <span className="font-medium text-slate-900">
+        {amount ? formatMoney(amount) : '—'}
+      </span>
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+      <p className="text-sm text-slate-700">{value}</p>
+    </div>
+  );
+}
+
+function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
+  return (
+    <div className="space-y-2 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm">
+      <p className="text-sm font-semibold text-slate-900">{restaurant.name}</p>
+      <p className="text-xs text-slate-500">
+        {[restaurant.cuisine, priceLevel(restaurant.priceLevel)]
+          .filter(Boolean)
+          .join(' · ')}
+      </p>
+      {typeof restaurant.distanceMi === 'number' && (
+        <p className="text-xs text-slate-400">
+          {restaurant.distanceMi.toFixed(1)} mi away
+        </p>
+      )}
+    </div>
+  );
+}
+
+function OverviewSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className="h-16 animate-pulse rounded-2xl border border-black/5 bg-white/50"
+        />
+      ))}
+    </div>
+  );
+}
+
+function BudgetSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className="h-4 w-full animate-pulse rounded-full bg-slate-200"
+        />
+      ))}
+    </div>
+  );
+}
+
+function BasicsSkeleton() {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div
+          key={index}
+          className="h-16 animate-pulse rounded-2xl border border-black/5 bg-white/50"
+        />
+      ))}
+    </div>
+  );
+}
+
+function SummarySkeleton() {
+  return (
+    <div className="space-y-4 rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm">
+      <div className="space-y-2">
+        <div className="h-3 w-24 animate-pulse rounded-full bg-slate-200" />
+        <div className="h-4 w-40 animate-pulse rounded-full bg-slate-200" />
+        <div className="h-3 w-32 animate-pulse rounded-full bg-slate-200" />
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-3 rounded-xl border border-slate-200/70 bg-white/60 p-3"
+          >
+            <div className="h-8 w-8 rounded-full bg-slate-200" />
+            <div className="h-3 flex-1 animate-pulse rounded-full bg-slate-200" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-2 rounded-xl bg-slate-900/10 p-4">
+        <div className="h-3 w-24 animate-pulse rounded-full bg-slate-200" />
+        <div className="h-4 w-32 animate-pulse rounded-full bg-slate-300" />
+      </div>
+    </div>
   );
 }

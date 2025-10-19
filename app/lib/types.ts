@@ -209,6 +209,76 @@ export class TripAPIError extends Error {
 }
 
 // ============================================================================
+// UI Data Model Types
+// ============================================================================
+
+export interface Money {
+  amount: number;
+  currency: 'USD';
+}
+
+export interface Flight {
+  id: string;
+  carrier: string;
+  flightNo: string;
+  depart: string;
+  arrive: string;
+  durationISO: string;
+  stops: number;
+  price: Money;
+  baggage?: {
+    personal: boolean;
+    carryOn: boolean;
+    checked?: number;
+  };
+}
+
+export interface Stay {
+  id: string;
+  name: string;
+  neighborhood?: string;
+  nights: number;
+  rating?: number;
+  freeCancel?: boolean;
+  total: Money;
+  distanceMi?: number;
+}
+
+export interface Transit {
+  id: string;
+  chain: string[];
+  durationISO: string;
+  fare?: Money;
+}
+
+export interface Restaurant {
+  id: string;
+  name: string;
+  cuisine?: string;
+  priceLevel?: 1 | 2 | 3 | 4;
+  openNow?: boolean;
+  distanceMi?: number;
+}
+
+export interface TripSelections {
+  flight?: Flight;
+  stay?: Stay;
+  transit?: Transit;
+  restaurants: Restaurant[];
+}
+
+export interface Trip {
+  id: string;
+  origin: string;
+  destination: string;
+  start: string;
+  end: string;
+  travelers: number;
+  currency: 'USD';
+  selections: TripSelections;
+}
+
+// ============================================================================
 // Utility Types
 // ============================================================================
 
