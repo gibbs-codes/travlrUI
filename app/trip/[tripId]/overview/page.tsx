@@ -187,40 +187,6 @@ export default function Overview() {
 
               <section>
                 <SectionHeader
-                  title="Budget snapshot"
-                  description="Only priced picks count toward the total."
-                />
-                <div className="mt-5 space-y-3 rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm">
-                  {isLoading && <BudgetSkeleton />}
-                  {!isLoading && selections && (
-                    <>
-                      <BudgetRow
-                        label="Flight"
-                        amount={selections.flight?.price ?? null}
-                      />
-                      <BudgetRow
-                        label="Stay"
-                        amount={selections.stay?.total ?? null}
-                      />
-                      <BudgetRow
-                        label="Transit"
-                        amount={selections.transit?.fare ?? null}
-                      />
-                      <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
-                        <span className="text-sm font-semibold text-slate-700">
-                          Grand total
-                        </span>
-                        <span className="text-lg font-semibold text-slate-900">
-                          {grandTotalLabel}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </section>
-
-              <section>
-                <SectionHeader
                   title="Trip basics"
                   description="Quick facts you can share."
                 />
@@ -339,23 +305,6 @@ function ChecklistItem({
   );
 }
 
-function BudgetRow({
-  label,
-  amount,
-}: {
-  label: string;
-  amount: { amount: number; currency: 'USD' } | null | undefined;
-}) {
-  return (
-    <div className="flex items-center justify-between text-sm text-slate-600">
-      <span>{label}</span>
-      <span className="font-medium text-slate-900">
-        {amount ? formatMoney(amount) : '—'}
-      </span>
-    </div>
-  );
-}
-
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
@@ -392,19 +341,6 @@ function OverviewSkeleton() {
         <div
           key={index}
           className="h-16 animate-pulse rounded-2xl border border-black/5 bg-white/50"
-        />
-      ))}
-    </div>
-  );
-}
-
-function BudgetSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div
-          key={index}
-          className="h-4 w-full animate-pulse rounded-full bg-slate-200"
         />
       ))}
     </div>

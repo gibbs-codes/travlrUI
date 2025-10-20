@@ -11,6 +11,7 @@ import { TopBar } from '../components/Navigation';
 import { tripAPI } from '../lib/api';
 import { buildCreateTripPayload } from '../lib/buildCreateTripPayload';
 import type { TripRequest } from '../lib/types';
+import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplete';
 
 const INTEREST_OPTIONS = [
   { id: 'cultural', label: 'Cultural' },
@@ -57,11 +58,12 @@ type CreationPhase = 'idle' | 'creating' | 'polling' | 'loading' | 'error';
 
 interface CreateTripFormValues {
   destination: string;
+  destinationCoordinates?: { lat: number; lng: number };
   origin: string;
+  originCoordinates?: { lat: number; lng: number };
   departureDate: string;
   returnDate: string;
   travelers: string;
-  budget: string;
   interests: string[];
   accommodationType: string;
   minRating: string;
@@ -89,7 +91,6 @@ export default function CreateTrip() {
     departureDate: '',
     returnDate: '',
     travelers: '1',
-    budget: '',
     interests: [],
     accommodationType: 'hotel',
     minRating: '3',
@@ -106,17 +107,60 @@ export default function CreateTrip() {
   const [currentTripId, setCurrentTripId] = useState<string | null>(null);
   const [lastSubmittedPayload, setLastSubmittedPayload] = useState<TripRequest | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [destinationSelected, setDestinationSelected] = useState(false);
+  const [originSelected, setOriginSelected] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
+
+  // Google Places Autocomplete for destination
+  const destinationAutocomplete = useGooglePlacesAutocomplete({
+    onPlaceSelected: (place) => {
+      setFormData(prev => ({
+        ...prev,
+        destination: place.name,
+        destinationCoordinates: place.coordinates,
+      }));
+      setDestinationSelected(true);
+      if (errors.destination) {
+        setErrors(prev => ({ ...prev, destination: '' }));
+      }
+    },
+    onError: (error) => {
+      setErrors(prev => ({ ...prev, destination: error }));
+    },
+  });
+
+  // Google Places Autocomplete for origin
+  const originAutocomplete = useGooglePlacesAutocomplete({
+    onPlaceSelected: (place) => {
+      setFormData(prev => ({
+        ...prev,
+        origin: place.name,
+        originCoordinates: place.coordinates,
+      }));
+      setOriginSelected(true);
+      if (errors.origin) {
+        setErrors(prev => ({ ...prev, origin: '' }));
+      }
+    },
+    onError: (error) => {
+      setErrors(prev => ({ ...prev, origin: error }));
+    },
+  });
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.destination.trim()) {
       newErrors.destination = 'Destination is required';
+    } else if (!destinationSelected) {
+      newErrors.destination = 'Please select a destination from the dropdown suggestions';
     }
+
     if (!formData.origin.trim()) {
       newErrors.origin = 'Origin is required';
+    } else if (!originSelected) {
+      newErrors.origin = 'Please select an origin city from the dropdown suggestions';
     }
     if (!formData.departureDate) {
       newErrors.departureDate = 'Departure date is required';
@@ -130,13 +174,6 @@ export default function CreateTrip() {
     const travelerCount = parseInt(formData.travelers, 10);
     if (!Number.isInteger(travelerCount) || travelerCount < 1) {
       newErrors.travelers = 'At least 1 traveler is required';
-    }
-
-    if (formData.budget) {
-      const budgetValue = parseFloat(formData.budget);
-      if (!Number.isFinite(budgetValue) || budgetValue < 0) {
-        newErrors.budget = 'Budget must be a positive number';
-      }
     }
 
     if (formData.minRating) {
@@ -153,6 +190,15 @@ export default function CreateTrip() {
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Reset selection state if user manually changes destination/origin
+    if (name === 'destination') {
+      setDestinationSelected(false);
+    }
+    if (name === 'origin') {
+      setOriginSelected(false);
+    }
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -167,40 +213,6 @@ export default function CreateTrip() {
     }));
   };
 
-  const buildBudgetOverride = () => {
-    if (!formData.budget) {
-      return undefined;
-    }
-
-    const budgetTotal = parseFloat(formData.budget);
-    if (!Number.isFinite(budgetTotal) || budgetTotal <= 0) {
-      return undefined;
-    }
-
-    const ratio = budgetTotal / DEFAULT_BUDGET_TOTAL;
-    const scaledEntries = Object.entries(DEFAULT_BUDGET_BREAKDOWN).map(([key, value]) => {
-      const scaled = Number((value * ratio).toFixed(2));
-      return [key, scaled] as [string, number];
-    });
-
-    const scaledBreakdown = scaledEntries.reduce<Record<string, number>>((acc, [key, value]) => {
-      acc[key] = value;
-      return acc;
-    }, {});
-
-    const scaledTotal = scaledEntries.reduce((sum, [, value]) => sum + value, 0);
-    const difference = Number((budgetTotal - scaledTotal).toFixed(2));
-
-    if (difference !== 0) {
-      const targetKey = 'accommodation';
-      scaledBreakdown[targetKey] = Number(((scaledBreakdown[targetKey] ?? 0) + difference).toFixed(2));
-    }
-
-    return {
-      total: Number(budgetTotal.toFixed(2)),
-      breakdown: scaledBreakdown,
-    };
-  };
 
   const buildPayloadFromForm = (): TripRequest => {
     const travelerCount = parseInt(formData.travelers, 10);
@@ -221,7 +233,6 @@ export default function CreateTrip() {
       },
       preferences: {
         interests: formData.interests,
-        budget: buildBudgetOverride(),
         accommodation: {
           type: formData.accommodationType,
           minRating: minRatingValue,
@@ -585,15 +596,17 @@ export default function CreateTrip() {
                       letterSpacing: '0.3px',
                     }}
                   >
-                    Destination *
+                    Destination * {destinationAutocomplete.isLoading && <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>(Loading...)</span>}
                   </label>
                   <input
+                    ref={destinationAutocomplete.inputRef}
                     type="text"
                     name="destination"
                     value={formData.destination}
                     onChange={handleChange}
                     placeholder="e.g., Barcelona, Spain"
                     style={inputStyle(!!errors.destination)}
+                    disabled={destinationAutocomplete.isLoading}
                     onFocus={(event) => {
                       event.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
                       event.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
@@ -617,6 +630,18 @@ export default function CreateTrip() {
                       {errors.destination}
                     </p>
                   )}
+                  {destinationAutocomplete.error && !errors.destination && (
+                    <p
+                      style={{
+                        marginTop: 'var(--space-1)',
+                        fontSize: '0.85rem',
+                        color: 'rgba(255, 193, 7, 0.9)',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      {destinationAutocomplete.error}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -630,15 +655,17 @@ export default function CreateTrip() {
                       letterSpacing: '0.3px',
                     }}
                   >
-                    Origin *
+                    Origin * {originAutocomplete.isLoading && <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>(Loading...)</span>}
                   </label>
                   <input
+                    ref={originAutocomplete.inputRef}
                     type="text"
                     name="origin"
                     value={formData.origin}
                     onChange={handleChange}
                     placeholder="e.g., Chicago, USA"
                     style={inputStyle(!!errors.origin)}
+                    disabled={originAutocomplete.isLoading}
                     onFocus={(event) => {
                       event.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
                       event.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
@@ -660,6 +687,18 @@ export default function CreateTrip() {
                       }}
                     >
                       {errors.origin}
+                    </p>
+                  )}
+                  {originAutocomplete.error && !errors.origin && (
+                    <p
+                      style={{
+                        marginTop: 'var(--space-1)',
+                        fontSize: '0.85rem',
+                        color: 'rgba(255, 193, 7, 0.9)',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      {originAutocomplete.error}
                     </p>
                   )}
                 </div>
@@ -857,34 +896,6 @@ export default function CreateTrip() {
                       gap: 'var(--space-4)',
                     }}
                   >
-                    <div>
-                      <label
-                        style={{
-                          display: 'block',
-                          marginBottom: 'var(--space-2)',
-                          fontSize: '0.85rem',
-                          fontWeight: 'var(--weight-medium)',
-                        }}
-                      >
-                        Budget (USD)
-                      </label>
-                      <input
-                        type="number"
-                        name="budget"
-                        value={formData.budget}
-                        onChange={handleChange}
-                        min="0"
-                        step="0.01"
-                        placeholder="e.g., 2000"
-                        style={inputStyle(!!errors.budget)}
-                      />
-                      {errors.budget && (
-                        <p style={{ marginTop: 'var(--space-1)', fontSize: '0.8rem', color: '#ff6b6b' }}>
-                          {errors.budget}
-                        </p>
-                      )}
-                    </div>
-
                     <div>
                       <label
                         style={{

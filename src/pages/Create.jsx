@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplete';
 
 const INTEREST_OPTIONS = [
   { id: 'cultural', label: 'Cultural' },
@@ -15,20 +16,59 @@ export default function Create() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     destination: '',
+    destinationCoordinates: null,
     origin: '',
+    originCoordinates: null,
     departureDate: '',
     returnDate: '',
     travelers: 2,
-    budget: '',
     interests: []
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [destinationSelected, setDestinationSelected] = useState(false);
+  const [originSelected, setOriginSelected] = useState(false);
 
   // Get today's date in YYYY-MM-DD format for min date validation
   const today = new Date().toISOString().split('T')[0];
+
+  // Google Places Autocomplete for destination
+  const destinationAutocomplete = useGooglePlacesAutocomplete({
+    onPlaceSelected: (place) => {
+      setFormData(prev => ({
+        ...prev,
+        destination: place.name,
+        destinationCoordinates: place.coordinates,
+      }));
+      setDestinationSelected(true);
+      if (errors.destination) {
+        setErrors(prev => ({ ...prev, destination: '' }));
+      }
+    },
+    onError: (error) => {
+      setErrors(prev => ({ ...prev, destination: error }));
+    },
+  });
+
+  // Google Places Autocomplete for origin
+  const originAutocomplete = useGooglePlacesAutocomplete({
+    onPlaceSelected: (place) => {
+      setFormData(prev => ({
+        ...prev,
+        origin: place.name,
+        originCoordinates: place.coordinates,
+      }));
+      setOriginSelected(true);
+      if (errors.origin) {
+        setErrors(prev => ({ ...prev, origin: '' }));
+      }
+    },
+    onError: (error) => {
+      setErrors(prev => ({ ...prev, origin: error }));
+    },
+  });
 
   const validateForm = () => {
     const newErrors = {};
@@ -36,10 +76,14 @@ export default function Create() {
     // Required field validation
     if (!formData.destination.trim()) {
       newErrors.destination = 'Destination is required';
+    } else if (!destinationSelected) {
+      newErrors.destination = 'Please select a destination from the dropdown suggestions';
     }
 
     if (!formData.origin.trim()) {
       newErrors.origin = 'Origin is required';
+    } else if (!originSelected) {
+      newErrors.origin = 'Please select an origin city from the dropdown suggestions';
     }
 
     if (!formData.departureDate) {
@@ -70,6 +114,14 @@ export default function Create() {
       ...prev,
       [name]: value
     }));
+
+    // Reset selection state if user manually changes destination/origin
+    if (name === 'destination') {
+      setDestinationSelected(false);
+    }
+    if (name === 'origin') {
+      setOriginSelected(false);
+    }
 
     // Clear error for this field when user starts typing
     if (errors[name]) {
@@ -120,13 +172,6 @@ export default function Create() {
           createdBy: 'user@example.com'
         }
       };
-
-      // Only include budget if user provided one
-      if (formData.budget && parseFloat(formData.budget) > 0) {
-        const budgetTotal = parseFloat(formData.budget);
-        requestBody.budget = { total: budgetTotal };
-        requestBody.preferences.budget = { total: budgetTotal };
-      }
 
       const response = await fetch('http://jamess-mac-mini:3006/api/trip/create', {
         method: 'POST',
@@ -186,40 +231,56 @@ export default function Create() {
           <div>
             <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-2">
               Destination <span className="text-red-500">*</span>
+              {destinationAutocomplete.isLoading && (
+                <span className="ml-2 text-xs text-gray-500">(Loading...)</span>
+              )}
             </label>
             <input
+              ref={destinationAutocomplete.inputRef}
               type="text"
               id="destination"
               name="destination"
               value={formData.destination}
               onChange={handleChange}
+              disabled={destinationAutocomplete.isLoading}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                 errors.destination ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${destinationAutocomplete.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               placeholder="e.g., Paris, France"
             />
             {errors.destination && (
               <p className="mt-1 text-sm text-red-600">{errors.destination}</p>
+            )}
+            {destinationAutocomplete.error && !errors.destination && (
+              <p className="mt-1 text-sm text-yellow-600">{destinationAutocomplete.error}</p>
             )}
           </div>
 
           <div>
             <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-2">
               Origin <span className="text-red-500">*</span>
+              {originAutocomplete.isLoading && (
+                <span className="ml-2 text-xs text-gray-500">(Loading...)</span>
+              )}
             </label>
             <input
+              ref={originAutocomplete.inputRef}
               type="text"
               id="origin"
               name="origin"
               value={formData.origin}
               onChange={handleChange}
+              disabled={originAutocomplete.isLoading}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                 errors.origin ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${originAutocomplete.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               placeholder="e.g., New York, USA"
             />
             {errors.origin && (
               <p className="mt-1 text-sm text-red-600">{errors.origin}</p>
+            )}
+            {originAutocomplete.error && !errors.origin && (
+              <p className="mt-1 text-sm text-yellow-600">{originAutocomplete.error}</p>
             )}
           </div>
         </div>
@@ -267,44 +328,25 @@ export default function Create() {
           </div>
         </div>
 
-        {/* Travelers & Budget */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="travelers" className="block text-sm font-medium text-gray-700 mb-2">
-              Number of Travelers <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              id="travelers"
-              name="travelers"
-              value={formData.travelers}
-              onChange={handleChange}
-              min="1"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                errors.travelers ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.travelers && (
-              <p className="mt-1 text-sm text-red-600">{errors.travelers}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-2">
-              Budget (USD) <span className="text-gray-400 text-xs">(optional)</span>
-            </label>
-            <input
-              type="number"
-              id="budget"
-              name="budget"
-              value={formData.budget}
-              onChange={handleChange}
-              min="0"
-              step="0.01"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              placeholder="e.g., 2000"
-            />
-          </div>
+        {/* Travelers */}
+        <div>
+          <label htmlFor="travelers" className="block text-sm font-medium text-gray-700 mb-2">
+            Number of Travelers <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            id="travelers"
+            name="travelers"
+            value={formData.travelers}
+            onChange={handleChange}
+            min="1"
+            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+              errors.travelers ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          {errors.travelers && (
+            <p className="mt-1 text-sm text-red-600">{errors.travelers}</p>
+          )}
         </div>
 
         {/* Interests */}

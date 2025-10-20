@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { Car, UtensilsCrossed } from 'lucide-react';
 import { Background } from '../../../components/Background';
 import { TopBar } from '../../../components/Navigation';
 import { ResultCard } from '../../../components/ResultCard';
@@ -12,6 +13,7 @@ import {
 } from '../../../components/FiltersBar';
 import { SectionHeader } from '../../../components/SectionHeader';
 import { StickyTripSummary } from '../../../components/StickyTripSummary';
+import { LockedSection } from '../../../components/LockedSection';
 import { tripAPI } from '../../../lib/api';
 import {
   normalizeTripResponse,
@@ -110,6 +112,12 @@ export default function Recommendations() {
               ? undefined
               : (item as Flight);
         } else if (kind === 'stay') {
+          // When changing hotel, reset transit and restaurants
+          const isChangingHotel = nextSelections.stay?.id !== item.id && nextSelections.stay !== undefined;
+          if (isChangingHotel) {
+            nextSelections.transit = undefined;
+            nextSelections.restaurants = [];
+          }
           nextSelections.stay =
             nextSelections.stay?.id === item.id
               ? undefined
@@ -131,6 +139,11 @@ export default function Recommendations() {
       };
     });
   };
+
+  // Sequential selection helpers
+  const isStaySelected = !!data?.trip.selections.stay;
+  const isTransitUnlocked = isStaySelected;
+  const isRestaurantsUnlocked = isStaySelected;
 
   const handleToggleFilter = (filter: keyof Filters) => {
     setFilters((prev) => ({
@@ -286,57 +299,77 @@ export default function Recommendations() {
               </section>
 
               <section ref={transitRef} id="transit">
-                <SectionHeader
-                  title="Getting around"
-                  description="Pick the transit plan that feels easy."
-                />
-                <div className="mt-5 space-y-3">
-                  {isLoading && <SkeletonStack />}
-                  {!isLoading &&
-                    data?.transit.map((option) => (
-                      <ResultCard
-                        key={option.id}
-                        kind="transit"
-                        data={option}
-                        isSelected={
-                          data.trip.selections.transit?.id === option.id
-                        }
-                        onSelect={() => select('transit', option)}
-                      />
-                    ))}
-                  {!isLoading && (data?.transit.length ?? 0) === 0 && (
-                    <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
-                      We&apos;ll add transit options as soon as we find good matches.
-                    </p>
-                  )}
-                </div>
+                {!isTransitUnlocked ? (
+                  <LockedSection
+                    title="Getting around"
+                    message="Select a hotel first to unlock transit recommendations near your stay"
+                    icon={<Car size={24} className="text-slate-500" />}
+                  />
+                ) : (
+                  <>
+                    <SectionHeader
+                      title="Getting around"
+                      description="Pick the transit plan that feels easy."
+                    />
+                    <div className="mt-5 space-y-3">
+                      {isLoading && <SkeletonStack />}
+                      {!isLoading &&
+                        data?.transit.map((option) => (
+                          <ResultCard
+                            key={option.id}
+                            kind="transit"
+                            data={option}
+                            isSelected={
+                              data.trip.selections.transit?.id === option.id
+                            }
+                            onSelect={() => select('transit', option)}
+                          />
+                        ))}
+                      {!isLoading && (data?.transit.length ?? 0) === 0 && (
+                        <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
+                          We&apos;ll add transit options as soon as we find good matches.
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
               </section>
 
               <section ref={restaurantsRef} id="restaurants">
-                <SectionHeader
-                  title="Food & sips"
-                  description="Save the spots you want to taste."
-                />
-                <div className="mt-5 space-y-3">
-                  {isLoading && <SkeletonStack />}
-                  {!isLoading &&
-                    data?.restaurants.map((restaurant) => (
-                      <ResultCard
-                        key={restaurant.id}
-                        kind="food"
-                        data={restaurant}
-                        isSelected={data.trip.selections.restaurants.some(
-                          (saved) => saved.id === restaurant.id
-                        )}
-                        onSelect={() => select('restaurant', restaurant)}
-                      />
-                    ))}
-                  {!isLoading && (data?.restaurants.length ?? 0) === 0 && (
-                    <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
-                      No eats yet — once they land you can save your shortlist here.
-                    </p>
-                  )}
-                </div>
+                {!isRestaurantsUnlocked ? (
+                  <LockedSection
+                    title="Food & sips"
+                    message="Select a hotel first to see restaurants nearby"
+                    icon={<UtensilsCrossed size={24} className="text-slate-500" />}
+                  />
+                ) : (
+                  <>
+                    <SectionHeader
+                      title="Food & sips"
+                      description="Save the spots you want to taste."
+                    />
+                    <div className="mt-5 space-y-3">
+                      {isLoading && <SkeletonStack />}
+                      {!isLoading &&
+                        data?.restaurants.map((restaurant) => (
+                          <ResultCard
+                            key={restaurant.id}
+                            kind="food"
+                            data={restaurant}
+                            isSelected={data.trip.selections.restaurants.some(
+                              (saved) => saved.id === restaurant.id
+                            )}
+                            onSelect={() => select('restaurant', restaurant)}
+                          />
+                        ))}
+                      {!isLoading && (data?.restaurants.length ?? 0) === 0 && (
+                        <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
+                          No eats yet — once they land you can save your shortlist here.
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
               </section>
 
               <footer className="rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm">
