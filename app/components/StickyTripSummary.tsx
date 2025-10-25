@@ -85,29 +85,29 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
   ];
 
   return (
-    <aside className="sticky top-4 h-fit space-y-6 rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm backdrop-blur">
+    <aside className="sticky top-4 h-fit space-y-4 rounded-2xl border border-black/5 bg-white/80 p-5 shadow-sm backdrop-blur">
       <header className="space-y-1">
-        <p className="text-sm uppercase tracking-wide text-slate-500">
+        <p className="text-xs uppercase tracking-wide text-gray-500">
           Trip summary
         </p>
-        <h2 className="text-xl font-semibold text-slate-900">{trip.destination}</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-gray-900">{trip.destination}</h2>
+        <p className="text-sm text-gray-500">
           {start} → {end}
         </p>
-        <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+        <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-gray-600">
           <Users className="h-3.5 w-3.5" />
           {trip.travelers} traveler{trip.travelers === 1 ? '' : 's'}
         </p>
       </header>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {rows.map((row) => (
           <div
             key={row.kind}
-            className="flex items-start gap-3 rounded-xl border border-slate-200/60 bg-white/70 px-3 py-3"
+            className="flex items-start gap-3 rounded-xl border border-slate-200/60 bg-white/70 px-3 py-2.5"
           >
             <span
-              className={`mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full ${
+              className={`mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${
                 row.hasSelection
                   ? 'bg-emerald-100 text-emerald-700'
                   : 'bg-slate-100 text-slate-400'
@@ -117,18 +117,18 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
             </span>
             <div className="flex-1">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-slate-900">{row.label}</p>
+                <p className="text-sm font-semibold text-gray-900">{row.label}</p>
                 <button
                   type="button"
                   onClick={() => onEdit(row.kind)}
-                  className="text-xs font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+                  className="text-xs font-medium text-gray-500 underline-offset-2 hover:text-gray-700 hover:underline"
                 >
                   Edit
                 </button>
               </div>
               <p
-                className={`mt-1 text-sm ${
-                  row.hasSelection ? 'text-slate-600' : 'text-slate-400'
+                className={`mt-0.5 text-sm ${
+                  row.hasSelection ? 'text-gray-600' : 'text-gray-400'
                 }`}
               >
                 {row.summary}
@@ -138,11 +138,11 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
         ))}
       </div>
 
-      <div className="space-y-3 rounded-2xl bg-slate-900 px-4 py-5 text-white">
+      <div className="space-y-2 rounded-2xl bg-slate-900 px-4 py-4 text-white">
         <p className="text-xs uppercase tracking-wide text-slate-300">
           Estimated total
         </p>
-        <p className="text-2xl font-semibold">{totalLabel}</p>
+        <p className="text-xl font-semibold">{totalLabel}</p>
         <p className="text-xs text-slate-300">
           Flights, stays, and transit — restaurants not included
         </p>
@@ -152,7 +152,7 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
         <button
           type="button"
           onClick={onPrint}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-500"
         >
           <Printer className="h-4 w-4" />
           Print itinerary
@@ -160,7 +160,7 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
         <button
           type="button"
           onClick={() => onEdit('flight')}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-slate-50"
         >
           Review selections
         </button>

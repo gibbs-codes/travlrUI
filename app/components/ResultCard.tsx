@@ -68,7 +68,7 @@ function CardImage({ src, alt }: { src: string; alt: string }) {
   if (hasError) {
     return (
       <div className="mb-4 flex h-48 w-full items-center justify-center rounded-lg bg-slate-100">
-        <div className="text-center text-sm text-slate-400">
+        <div className="text-center text-xs text-gray-400">
           <Bed className="mx-auto mb-2 h-8 w-8" />
           <p>Image unavailable</p>
         </div>
@@ -151,26 +151,26 @@ export function ResultCard(props: ResultCardProps) {
         <div className="flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-base font-semibold text-slate-900">{title}</p>
+              <p className="text-base font-semibold text-gray-900">{title}</p>
               {subtitle && (
-                <p className="text-sm text-slate-500">{subtitle}</p>
+                <p className="text-sm text-gray-500">{subtitle}</p>
               )}
             </div>
             {!isSelected && (
-              <span className="rounded-full bg-slate-900/5 px-2 py-0.5 text-xs font-medium text-slate-600">
+              <span className="rounded-full bg-slate-900/5 px-2 py-0.5 text-xs font-medium text-gray-500">
                 Tap to choose
               </span>
             )}
           </div>
 
           {meta.length > 0 && (
-            <dl className="mt-4 grid grid-cols-1 gap-2 text-sm text-slate-600 sm:grid-cols-2">
+            <dl className="mt-3 grid grid-cols-1 gap-2 text-sm text-gray-700 sm:grid-cols-2">
               {meta.map(({ label, value, icon: metaIcon }) => (
                 <div key={label} className="flex items-center gap-2">
                   {metaIcon}
                   <div>
                     <dt className="sr-only">{label}</dt>
-                    <dd className="leading-tight">{value}</dd>
+                    <dd className="leading-normal">{value}</dd>
                   </div>
                 </div>
               ))}
@@ -179,15 +179,15 @@ export function ResultCard(props: ResultCardProps) {
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-200/70 pt-4 text-sm">
+      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-200/70 pt-3 text-sm">
         {price && (
-          <span className="text-lg font-semibold text-slate-900">
+          <span className="text-base font-semibold text-gray-900">
             {price}
           </span>
         )}
 
         {footerNote && (
-          <span className="rounded-full bg-slate-900/5 px-2 py-0.5 text-xs text-slate-500">
+          <span className="rounded-full bg-slate-900/5 px-2 py-0.5 text-xs text-gray-500">
             {footerNote}
           </span>
         )}
@@ -208,7 +208,7 @@ export function ResultCard(props: ResultCardProps) {
         <button
           type="button"
           onClick={handleActionClick}
-          className={`ml-auto inline-flex items-center rounded-xl bg-slate-900 text-white px-4 py-2 text-sm font-medium shadow-sm transition hover:bg-slate-800 ${
+          className={`ml-auto inline-flex items-center rounded-xl bg-slate-900 text-white px-3 py-2 text-sm font-medium shadow-sm transition hover:bg-slate-800 ${
             isSelected ? 'bg-emerald-600 hover:bg-emerald-500' : ''
           }`}
         >

@@ -219,14 +219,14 @@ export default function Recommendations() {
       <main className="relative z-10">
         <div className="mx-auto max-w-6xl px-4 pb-16 pt-12 lg:px-6">
           {/* Two-column grid keeps the summary in view on desktop while preserving a single column on mobile. */}
-          <header className="mb-10 space-y-2">
-            <p className="text-sm uppercase tracking-wide text-slate-500">
+          <header className="mb-8 space-y-1.5">
+            <p className="text-xs uppercase tracking-wide text-gray-500">
               Trip curation studio
             </p>
-            <h1 className="text-3xl font-semibold text-slate-900">
+            <h1 className="text-2xl font-semibold text-gray-900">
               Tune your itinerary
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-gray-600">
               Pick the flight, stay, transit, and eats that feel right. We&apos;ll
               keep the total updated on the fly.
             </p>
