@@ -231,6 +231,7 @@ export interface Flight {
     carryOn: boolean;
     checked?: number;
   };
+  bookingUrl?: string;
 }
 
 export interface Stay {
@@ -242,6 +243,8 @@ export interface Stay {
   freeCancel?: boolean;
   total: Money;
   distanceMi?: number;
+  bookingUrl?: string;
+  images?: string[];
 }
 
 export interface Transit {
@@ -249,6 +252,7 @@ export interface Transit {
   chain: string[];
   durationISO: string;
   fare?: Money;
+  bookingUrl?: string;
 }
 
 export interface Restaurant {
@@ -258,6 +262,16 @@ export interface Restaurant {
   priceLevel?: 1 | 2 | 3 | 4;
   openNow?: boolean;
   distanceMi?: number;
+  address?: string;
+  rating?: number;
+  reviewCount?: number;
+  images?: string[];
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  googlePlaceId?: string;
+  price?: Money;
 }
 
 export interface TripSelections {

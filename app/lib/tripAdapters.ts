@@ -158,6 +158,15 @@ function mapFlight(raw: Json, currency: Money['currency']): Flight | null {
     currency,
   };
 
+  const bookingUrl =
+    asString(raw.bookingUrl) ??
+    asString(raw.booking_url) ??
+    asString(metadata.bookingUrl) ??
+    asString(metadata.booking_url) ??
+    asString(raw.url) ??
+    asString(metadata.url) ??
+    undefined;
+
   return {
     id: String(asString(raw.id) ?? `${carrier}-${flightNo}`),
     carrier,
@@ -188,6 +197,7 @@ function mapFlight(raw: Json, currency: Money['currency']): Flight | null {
         asNumber(metadata.checked) ??
         undefined,
     },
+    bookingUrl,
   };
 }
 
@@ -202,6 +212,22 @@ function mapStay(raw: Json, currency: Money['currency']): Stay | null {
     asNumber(metadata.nights) ??
     asNumber(raw.nights) ??
     asNumber(metadata.duration);
+
+  const bookingUrl =
+    asString(raw.bookingUrl) ??
+    asString(raw.booking_url) ??
+    asString(metadata.bookingUrl) ??
+    asString(metadata.booking_url) ??
+    asString(raw.url) ??
+    asString(metadata.url) ??
+    undefined;
+
+  // Extract images
+  const agentMetadata = toRecord(raw.agentMetadata);
+  const imagesRaw = raw.images ?? agentMetadata.images ?? metadata.images;
+  const images = Array.isArray(imagesRaw)
+    ? imagesRaw.map(img => asString(img)).filter((img): img is string => Boolean(img))
+    : undefined;
 
   return {
     id: String(asString(raw.id) ?? asString(raw.name) ?? cryptoRandomId()),
@@ -222,6 +248,8 @@ function mapStay(raw: Json, currency: Money['currency']): Stay | null {
       asNumber(metadata.distance_mi) ??
       asNumber(raw.distance_mi) ??
       undefined,
+    bookingUrl,
+    images: images && images.length > 0 ? images : undefined,
   };
 }
 
@@ -240,32 +268,69 @@ function mapTransit(raw: Json, currency: Money['currency']): Transit | null {
 
   const fare = ensureMoney(metadata.fare ?? raw.fare ?? raw.price, currency);
 
+  const bookingUrl =
+    asString(raw.bookingUrl) ??
+    asString(raw.booking_url) ??
+    asString(metadata.bookingUrl) ??
+    asString(metadata.booking_url) ??
+    asString(raw.url) ??
+    asString(metadata.url) ??
+    undefined;
+
   return {
     id: String(asString(raw.id) ?? chain.join('-') || cryptoRandomId()),
     chain,
     durationISO,
     fare: fare ?? undefined,
+    bookingUrl,
   };
 }
 
 function mapRestaurant(raw: Json): Restaurant | null {
   const metadata = toRecord(raw.metadata);
+  const agentMetadata = toRecord(raw.agentMetadata);
+  const location = toRecord(raw.location);
+  const rating = toRecord(raw.rating);
+  const externalIds = toRecord(raw.externalIds);
 
   const priceLevelCandidate =
     asNumber(metadata.priceLevel) ??
     asNumber(raw.priceLevel) ??
     asNumber(metadata.price_level) ??
-    asNumber(raw.price_level);
+    asNumber(raw.price_level) ??
+    asNumber(agentMetadata.priceLevel) ??
+    asNumber(agentMetadata.price_level);
 
   const validPriceLevel =
     priceLevelCandidate && [1, 2, 3, 4].includes(priceLevelCandidate)
       ? (priceLevelCandidate as 1 | 2 | 3 | 4)
       : undefined;
 
+  // Extract coordinates
+  const coords = toRecord(location.coordinates);
+  const coordinates = coords && typeof coords.lat === 'number' && typeof coords.lng === 'number'
+    ? { lat: coords.lat, lng: coords.lng }
+    : undefined;
+
+  // Extract images
+  const imagesRaw = raw.images ?? agentMetadata.images ?? metadata.images;
+  const images = Array.isArray(imagesRaw)
+    ? imagesRaw.map(img => asString(img)).filter((img): img is string => Boolean(img))
+    : undefined;
+
+  // Get price from recommendation
+  const priceAmount = asNumber(raw.price?.amount) ?? asNumber(metadata.price);
+  const currency = asString(raw.price?.currency) ?? 'USD';
+  const price = priceAmount !== undefined ? { amount: priceAmount, currency } : undefined;
+
   return {
     id: String(asString(raw.id) ?? asString(raw.name) ?? cryptoRandomId()),
     name: asString(raw.name) ?? 'Restaurant',
-    cuisine: asString(metadata.cuisine) ?? asString(raw.cuisine) ?? undefined,
+    cuisine:
+      asString(agentMetadata.cuisine) ??
+      asString(metadata.cuisine) ??
+      asString(raw.cuisine) ??
+      undefined,
     priceLevel: validPriceLevel,
     openNow: coerceBoolean(metadata.openNow ?? raw.openNow ?? raw.open) ?? undefined,
     distanceMi:
@@ -274,6 +339,30 @@ function mapRestaurant(raw: Json): Restaurant | null {
       asNumber(metadata.distance_mi) ??
       asNumber(raw.distance_mi) ??
       undefined,
+    address:
+      asString(location.address) ??
+      asString(metadata.address) ??
+      asString(raw.address) ??
+      undefined,
+    rating:
+      asNumber(rating.score) ??
+      asNumber(raw.rating) ??
+      asNumber(metadata.rating) ??
+      undefined,
+    reviewCount:
+      asNumber(rating.reviewCount) ??
+      asNumber(rating.review_count) ??
+      asNumber(metadata.reviewCount) ??
+      asNumber(metadata.review_count) ??
+      undefined,
+    images: images && images.length > 0 ? images : undefined,
+    coordinates,
+    googlePlaceId:
+      asString(externalIds.providerId) ??
+      asString(externalIds.googlePlaceId) ??
+      asString(metadata.placeId) ??
+      undefined,
+    price,
   };
 }
 

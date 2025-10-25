@@ -15,8 +15,9 @@ import {
   CalendarDays,
   ShieldCheck,
   DollarSign,
+  ExternalLink,
 } from 'lucide-react';
-import { ReactNode, MouseEvent, KeyboardEvent } from 'react';
+import { ReactNode, MouseEvent, KeyboardEvent, useState } from 'react';
 import {
   formatDateTime,
   formatDuration,
@@ -60,6 +61,45 @@ const CARD_SELECTED = 'border-emerald-400/70 bg-emerald-50/80';
 const BADGE_CLASSES =
   'inline-flex items-center gap-1 rounded-full bg-emerald-600/10 text-emerald-700 px-2 py-0.5 text-xs';
 
+function CardImage({ src, alt }: { src: string; alt: string }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className="mb-4 flex h-48 w-full items-center justify-center rounded-lg bg-slate-100">
+        <div className="text-center text-sm text-slate-400">
+          <Bed className="mx-auto mb-2 h-8 w-8" />
+          <p>Image unavailable</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative mb-4 h-48 w-full overflow-hidden rounded-lg bg-slate-100">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-slate-600" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setIsLoading(false);
+          setHasError(true);
+        }}
+        className={`h-full w-full object-cover transition-opacity duration-300 ${
+          isLoading ? 'opacity-0' : 'opacity-100'
+        }`}
+      />
+    </div>
+  );
+}
+
 export function ResultCard(props: ResultCardProps) {
   // Card shell is standardized here so flights, stays, transit, and food feel cohesive.
   // We use a div with button semantics so the footer CTA can stay an actual button.
@@ -82,7 +122,7 @@ export function ResultCard(props: ResultCardProps) {
     onSelect(data.id);
   };
 
-  const { icon, title, subtitle, meta, price, actionLabel, footerNote } =
+  const { icon, title, subtitle, meta, price, actionLabel, footerNote, bookingUrl, bookingLabel, imageUrl, imageAlt } =
     buildContent(kind, data, isSelected);
 
   return (
@@ -98,6 +138,10 @@ export function ResultCard(props: ResultCardProps) {
           <Check className="h-3.5 w-3.5" />
           Selected
         </span>
+      )}
+
+      {imageUrl && (
+        <CardImage src={imageUrl} alt={imageAlt || title} />
       )}
 
       <div className="flex items-start gap-3">
@@ -148,6 +192,19 @@ export function ResultCard(props: ResultCardProps) {
           </span>
         )}
 
+        {bookingUrl && (
+          <a
+            href={bookingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline transition"
+          >
+            {bookingLabel || 'View details'}
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
+
         <button
           type="button"
           onClick={handleActionClick}
@@ -176,6 +233,10 @@ type CardContent = {
   price?: string;
   footerNote?: string;
   actionLabel: string;
+  bookingUrl?: string;
+  bookingLabel?: string;
+  imageUrl?: string;
+  imageAlt?: string;
 };
 
 function buildContent(
@@ -241,6 +302,8 @@ function buildContent(
         meta,
         price: formatMoney(flight.price),
         actionLabel: isSelected ? 'Flight saved' : 'Select flight',
+        bookingUrl: flight.bookingUrl,
+        bookingLabel: 'Book flight',
       };
     }
 
@@ -289,6 +352,10 @@ function buildContent(
         price: formatMoney(stay.total),
         footerNote: stay.freeCancel ? 'Cancel anytime' : undefined,
         actionLabel: isSelected ? 'Stay saved' : 'Select stay',
+        bookingUrl: stay.bookingUrl,
+        bookingLabel: 'View hotel',
+        imageUrl: stay.images?.[0],
+        imageAlt: stay.name,
       };
     }
 
@@ -313,24 +380,63 @@ function buildContent(
         meta,
         price: formatMoney(transit.fare),
         actionLabel: isSelected ? 'Transit saved' : 'Select transit',
+        bookingUrl: transit.bookingUrl,
+        bookingLabel: 'Learn more',
       };
     }
 
     case 'food': {
       const restaurant = data as Restaurant;
-      const meta: MetaRow[] = [
-        {
+
+      // Check if this is a placeholder/generic restaurant
+      const isGeneric =
+        !restaurant.name ||
+        restaurant.name === 'Restaurant' ||
+        restaurant.name.toLowerCase().includes('restaurant recommendation');
+
+      const displayName = isGeneric ? 'Name unavailable' : restaurant.name;
+
+      const meta: MetaRow[] = [];
+
+      // Add rating if available
+      if (typeof restaurant.rating === 'number') {
+        meta.push({
+          label: 'Rating',
+          value: `${formatStars(restaurant.rating)}${
+            restaurant.reviewCount ? ` (${restaurant.reviewCount})` : ''
+          }`,
+          icon: <Star className="h-4 w-4 text-amber-500" />,
+        });
+      }
+
+      // Add cuisine if available
+      if (restaurant.cuisine) {
+        meta.push({
           label: 'Cuisine',
-          value: restaurant.cuisine || 'Open to anything',
+          value: restaurant.cuisine,
           icon: <UtensilsCrossed className="h-4 w-4 text-slate-500" />,
-        },
-        {
+        });
+      }
+
+      // Add price level if available
+      if (restaurant.priceLevel) {
+        meta.push({
           label: 'Price level',
           value: formatPriceLevel(restaurant.priceLevel),
           icon: <DollarSign className="h-4 w-4 text-slate-500" />,
-        },
-      ];
+        });
+      }
 
+      // Add address if available
+      if (restaurant.address) {
+        meta.push({
+          label: 'Address',
+          value: restaurant.address,
+          icon: <MapPin className="h-4 w-4 text-slate-500" />,
+        });
+      }
+
+      // Add distance if available
       if (typeof restaurant.distanceMi === 'number') {
         meta.push({
           label: 'Distance',
@@ -339,12 +445,24 @@ function buildContent(
         });
       }
 
+      // Generate Google Maps link
+      let mapsUrl: string | undefined;
+      if (restaurant.googlePlaceId) {
+        mapsUrl = `https://www.google.com/maps/search/?api=1&query=Google&query_place_id=${restaurant.googlePlaceId}`;
+      } else if (restaurant.coordinates) {
+        mapsUrl = `https://www.google.com/maps/search/?api=1&query=${restaurant.coordinates.lat},${restaurant.coordinates.lng}`;
+      }
+
       return {
         icon: <UtensilsCrossed className="h-5 w-5" />,
-        title: restaurant.name,
+        title: displayName,
+        subtitle: restaurant.address,
         meta,
+        price: restaurant.price ? formatMoney(restaurant.price) : undefined,
         footerNote: restaurant.openNow ? 'Open now' : undefined,
         actionLabel: isSelected ? 'Saved to eats' : 'Save restaurant',
+        bookingUrl: mapsUrl,
+        bookingLabel: 'View on map',
       };
     }
 

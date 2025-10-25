@@ -317,18 +317,45 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
+  // Check if this is a placeholder/generic restaurant
+  const isGeneric =
+    !restaurant.name ||
+    restaurant.name === 'Restaurant' ||
+    restaurant.name.toLowerCase().includes('restaurant recommendation');
+
+  const displayName = isGeneric ? 'Name unavailable' : restaurant.name;
+
+  // Build details line
+  const details = [
+    restaurant.rating ? stars(restaurant.rating) : null,
+    restaurant.reviewCount ? `${restaurant.reviewCount} reviews` : null,
+    restaurant.cuisine,
+    priceLevel(restaurant.priceLevel),
+  ].filter(Boolean);
+
   return (
     <div className="space-y-2 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm">
-      <p className="text-sm font-semibold text-slate-900">{restaurant.name}</p>
-      <p className="text-xs text-slate-500">
-        {[restaurant.cuisine, priceLevel(restaurant.priceLevel)]
-          .filter(Boolean)
-          .join(' · ')}
-      </p>
+      <p className="text-sm font-semibold text-slate-900">{displayName}</p>
+      {details.length > 0 && (
+        <p className="text-xs text-slate-500">{details.join(' · ')}</p>
+      )}
+      {restaurant.address && (
+        <p className="text-xs text-slate-400">{restaurant.address}</p>
+      )}
       {typeof restaurant.distanceMi === 'number' && (
         <p className="text-xs text-slate-400">
           {restaurant.distanceMi.toFixed(1)} mi away
         </p>
+      )}
+      {restaurant.googlePlaceId && (
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=Google&query_place_id=${restaurant.googlePlaceId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block text-xs text-blue-600 hover:text-blue-700 hover:underline"
+        >
+          View on Google Maps →
+        </a>
       )}
     </div>
   );
