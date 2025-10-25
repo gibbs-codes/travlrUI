@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
 
 interface PlaceResult {
   name: string;
@@ -37,16 +36,39 @@ export function useGooglePlacesAutocomplete({
       return;
     }
 
-    const loader = new Loader({
-      apiKey,
-      version: 'weekly',
-      libraries: ['places'],
-    });
-
     setIsLoading(true);
 
-    loader
-      .load()
+    // Load the Google Maps JavaScript API dynamically
+    const loadGoogleMapsScript = () => {
+      return new Promise<void>((resolve, reject) => {
+        // Check if already loaded
+        if (window.google?.maps?.places) {
+          resolve();
+          return;
+        }
+
+        // Check if script is already being loaded
+        const existingScript = document.querySelector(
+          'script[src*="maps.googleapis.com"]'
+        );
+        if (existingScript) {
+          existingScript.addEventListener('load', () => resolve());
+          existingScript.addEventListener('error', () => reject(new Error('Script load error')));
+          return;
+        }
+
+        // Create and append script
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load Google Maps script'));
+        document.head.appendChild(script);
+      });
+    };
+
+    loadGoogleMapsScript()
       .then(() => {
         if (!inputRef.current) return;
 
