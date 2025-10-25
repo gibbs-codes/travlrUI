@@ -143,13 +143,17 @@ export default function CreateTrip() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.destination.trim()) {
+    // Get current values from the DOM inputs
+    const currentDestination = destinationAutocomplete.inputRef.current?.value || '';
+    const currentOrigin = originAutocomplete.inputRef.current?.value || '';
+
+    if (!currentDestination.trim()) {
       newErrors.destination = 'Destination is required';
     } else if (!destinationSelected) {
       newErrors.destination = 'Please select a destination from the dropdown suggestions';
     }
 
-    if (!formData.origin.trim()) {
+    if (!currentOrigin.trim()) {
       newErrors.origin = 'Origin is required';
     } else if (!originSelected) {
       newErrors.origin = 'Please select an origin city from the dropdown suggestions';
@@ -594,11 +598,11 @@ export default function CreateTrip() {
                     ref={destinationAutocomplete.inputRef}
                     type="text"
                     name="destination"
-                    value={formData.destination}
-                    onChange={handleChange}
                     placeholder="e.g., Barcelona, Spain"
+                    defaultValue={formData.destination}
                     style={inputStyle(!!errors.destination)}
                     disabled={destinationAutocomplete.isLoading}
+                    autoComplete="off"
                     onFocus={(event) => {
                       event.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
                       event.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
@@ -653,11 +657,11 @@ export default function CreateTrip() {
                     ref={originAutocomplete.inputRef}
                     type="text"
                     name="origin"
-                    value={formData.origin}
-                    onChange={handleChange}
                     placeholder="e.g., Chicago, USA"
+                    defaultValue={formData.origin}
                     style={inputStyle(!!errors.origin)}
                     disabled={originAutocomplete.isLoading}
+                    autoComplete="off"
                     onFocus={(event) => {
                       event.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
                       event.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
