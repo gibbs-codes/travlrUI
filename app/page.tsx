@@ -32,7 +32,7 @@ export default function Home() {
             </Text>
             <Text>
               Simply tell us where you want to go, and we'll create a personalized
-              itinerary that matches your style and budget.
+              itinerary that matches your style and preferences.
             </Text>
 
             {/* Call to Action Button */}

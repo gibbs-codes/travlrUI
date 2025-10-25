@@ -43,14 +43,6 @@ const DINING_PRICE_OPTIONS = [
   { id: 'premium', label: 'Premium' },
 ];
 
-const DEFAULT_BUDGET_TOTAL = 1500;
-const DEFAULT_BUDGET_BREAKDOWN = {
-  flight: 500,
-  accommodation: 700,
-  food: 200,
-  activities: 100,
-};
-
 const POLL_INTERVAL_MS = 2000;
 const POLL_TIMEOUT_MS = 120000;
 
