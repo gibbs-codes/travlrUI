@@ -407,15 +407,14 @@ export default function CreateTrip() {
 
   const inputStyle = (hasError: boolean) => ({
     width: '100%',
-    padding: 'var(--space-3)',
-    background: 'rgba(255, 255, 255, 0.15)',
-    border: `1px solid ${hasError ? 'rgba(255, 107, 107, 0.6)' : 'rgba(255, 255, 255, 0.3)'}`,
-    borderRadius: 'var(--radius-md)',
-    color: 'var(--color-text-primary)',
+    padding: '0.75rem',
+    background: 'white',
+    border: `2px solid ${hasError ? '#dc2626' : '#d1d5db'}`,
+    borderRadius: '0.5rem',
+    color: '#111827',
     fontSize: '1rem',
     fontFamily: 'var(--font-body)',
-    backdropFilter: 'blur(10px)',
-    transition: 'all var(--transition-base)',
+    transition: 'all 150ms ease',
     outline: 'none',
   });
 
@@ -440,10 +439,10 @@ export default function CreateTrip() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 'var(--space-6)',
+          padding: 'var(--space-4)',
         }}
       >
-        <GlassCard style={{ maxWidth: '480px', width: '100%', padding: 'var(--space-8)' }}>
+        <GlassCard className="max-w-md w-full p-6 sm:p-8">
           <Heading level={2} elegant style={{ marginBottom: 'var(--space-3)' }}>
             {isError ? 'We hit a bump' : 'Building your trip...'}
           </Heading>
@@ -452,14 +451,13 @@ export default function CreateTrip() {
           </Text>
 
           {isError ? (
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
                 onClick={handleRetry}
                 disabled={isRetrying}
                 style={{
                   flex: 1,
-                  minWidth: '140px',
                   padding: 'var(--space-3)',
                   background: isRetrying
                     ? 'rgba(255, 255, 255, 0.15)'
@@ -480,7 +478,6 @@ export default function CreateTrip() {
                 onClick={handleCancel}
                 style={{
                   flex: 1,
-                  minWidth: '140px',
                   padding: 'var(--space-3)',
                   background: 'rgba(255, 255, 255, 0.12)',
                   border: '1px solid rgba(255, 255, 255, 0.25)',
@@ -521,21 +518,18 @@ export default function CreateTrip() {
 
   const buttonStyle = {
     width: '100%',
-    padding: 'var(--space-4) var(--space-6)',
+    padding: '1rem 2rem',
     background:
       isFormValid && !isSubmitting && creationPhase === 'idle'
-        ? 'rgba(255, 255, 255, 0.25)'
-        : 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255, 255, 255, 0.4)',
-    borderRadius: 'var(--radius-md)',
-    color: 'var(--color-text-primary)',
+        ? '#1f2937'
+        : '#9ca3af',
+    border: '2px solid #111827',
+    borderRadius: '0.5rem',
+    color: 'white',
     fontSize: '1.1rem',
-    fontWeight: 'var(--weight-medium)',
+    fontWeight: '600',
     cursor: isFormValid && !isSubmitting && creationPhase === 'idle' ? 'pointer' : 'not-allowed',
-    opacity: isFormValid && !isSubmitting && creationPhase === 'idle' ? 1 : 0.5,
-    transition: 'all var(--transition-base)',
-    letterSpacing: '0.5px',
+    transition: 'all 150ms ease',
   } as const;
 
   return (
@@ -574,12 +568,7 @@ export default function CreateTrip() {
             <form onSubmit={handleSubmit} style={{ marginTop: 'var(--space-6)' }}>
               {/* Destination & Origin */}
               <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 'var(--space-4)',
-                  marginBottom: 'var(--space-4)',
-                }}
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4"
               >
                 <div>
                   <label
@@ -702,12 +691,7 @@ export default function CreateTrip() {
 
               {/* Dates */}
               <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 'var(--space-4)',
-                  marginBottom: 'var(--space-4)',
-                }}
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4"
               >
                 <div>
                   <label
@@ -815,11 +799,7 @@ export default function CreateTrip() {
                   </span>
                 </label>
                 <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                    gap: 'var(--space-2)',
-                  }}
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"
                 >
                   {INTEREST_OPTIONS.map(interest => (
                     <label
@@ -885,12 +865,7 @@ export default function CreateTrip() {
                 </button>
                 {showAdvanced && (
                   <div
-                    style={{
-                      marginTop: 'var(--space-4)',
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                      gap: 'var(--space-4)',
-                    }}
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4"
                   >
                     <div>
                       <label
@@ -1005,14 +980,14 @@ export default function CreateTrip() {
                 style={buttonStyle}
                 onMouseEnter={(event) => {
                   if (isFormValid && !isSubmitting && creationPhase === 'idle') {
-                    event.currentTarget.style.background = 'rgba(255, 255, 255, 0.35)';
-                    event.currentTarget.style.transform = 'translateY(-2px)';
-                    event.currentTarget.style.boxShadow = 'var(--shadow-glass-hover)';
+                    event.currentTarget.style.background = '#111827';
+                    event.currentTarget.style.transform = 'translateY(-1px)';
+                    event.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
                   }
                 }}
                 onMouseLeave={(event) => {
                   if (isFormValid && !isSubmitting && creationPhase === 'idle') {
-                    event.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                    event.currentTarget.style.background = '#1f2937';
                     event.currentTarget.style.transform = 'translateY(0)';
                     event.currentTarget.style.boxShadow = 'none';
                   }

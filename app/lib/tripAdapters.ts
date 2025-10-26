@@ -278,7 +278,7 @@ function mapTransit(raw: Json, currency: Money['currency']): Transit | null {
     undefined;
 
   return {
-    id: String(asString(raw.id) ?? chain.join('-') || cryptoRandomId()),
+    id: String((asString(raw.id) ?? chain.join('-')) || cryptoRandomId()),
     chain,
     durationISO,
     fare: fare ?? undefined,
@@ -319,9 +319,9 @@ function mapRestaurant(raw: Json): Restaurant | null {
     : undefined;
 
   // Get price from recommendation
-  const priceAmount = asNumber(raw.price?.amount) ?? asNumber(metadata.price);
-  const currency = asString(raw.price?.currency) ?? 'USD';
-  const price = priceAmount !== undefined ? { amount: priceAmount, currency } : undefined;
+  const rawPrice = toRecord(raw.price);
+  const priceAmount = asNumber(rawPrice.amount) ?? asNumber(metadata.price);
+  const price = priceAmount !== undefined ? { amount: priceAmount, currency: 'USD' as const } : undefined;
 
   return {
     id: String(asString(raw.id) ?? asString(raw.name) ?? cryptoRandomId()),

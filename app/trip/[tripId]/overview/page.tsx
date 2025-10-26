@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { CheckCircle2, Square } from 'lucide-react';
 import { Background } from '../../../components/Background';
 import { TopBar } from '../../../components/Navigation';
 import { StickyTripSummary } from '../../../components/StickyTripSummary';
 import { SectionHeader } from '../../../components/SectionHeader';
+import { ErrorMessage } from '../../../components/ErrorMessage';
 import { tripAPI } from '../../../lib/api';
 import {
   normalizeTripResponse,
@@ -102,7 +104,7 @@ export default function Overview() {
       <TopBar logo="Travlr" navText="home" />
 
       <main className="relative z-10">
-        <div className="mx-auto max-w-6xl px-4 pb-16 pt-12 lg:px-6">
+        <div className="mx-auto max-w-6xl px-4 pb-16 pt-24 lg:px-6">
           {/* Layout note: two-column grid mirrors recommendations so the summary stays anchored. */}
           <header className="mb-10 space-y-2">
             <p className="text-sm uppercase tracking-wide text-slate-500">
@@ -117,15 +119,12 @@ export default function Overview() {
           </header>
 
           {error && !trip && (
-            <div className="mb-10 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-700">
-              <p>{error}</p>
-              <button
-                type="button"
-                onClick={fetchTrip}
-                className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
-              >
-                Try again
-              </button>
+            <div className="mb-10">
+              <ErrorMessage
+                title="Unable to load trip overview"
+                message={error}
+                onRetry={fetchTrip}
+              />
             </div>
           )}
 
@@ -190,7 +189,7 @@ export default function Overview() {
                   title="Trip basics"
                   description="Quick facts you can share."
                 />
-                <div className="mt-5 grid gap-3 rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm md:grid-cols-2">
+                <div className="mt-5 grid gap-3 rounded-lg border border-gray-200 bg-white/80 p-6 shadow-sm md:grid-cols-2">
                   {isLoading && <BasicsSkeleton />}
                   {!isLoading && trip && (
                     <>
@@ -289,10 +288,14 @@ function ChecklistItem({
   onEdit: () => void;
 }) {
   return (
-    <li className="flex items-start gap-3 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm">
-      <span className="mt-0.5 text-lg">{checked ? '✅' : '☐'}</span>
+    <li className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white/70 p-4 shadow-sm">
+      {checked ? (
+        <CheckCircle2 className="mt-0.5 h-5 w-5 text-gray-400" />
+      ) : (
+        <Square className="mt-0.5 h-5 w-5 text-gray-400" />
+      )}
       <div className="flex-1 space-y-1">
-        <p className="text-sm text-slate-900">{label}</p>
+        <p className="text-sm text-gray-900">{label}</p>
         <button
           type="button"
           onClick={onEdit}
@@ -334,7 +337,7 @@ function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
   ].filter(Boolean);
 
   return (
-    <div className="space-y-2 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm">
+    <div className="space-y-2 rounded-lg border border-gray-200 bg-white/70 p-4 shadow-sm">
       <p className="text-sm font-semibold text-slate-900">{displayName}</p>
       {details.length > 0 && (
         <p className="text-xs text-slate-500">{details.join(' · ')}</p>
@@ -367,7 +370,7 @@ function OverviewSkeleton() {
       {Array.from({ length: 4 }).map((_, index) => (
         <div
           key={index}
-          className="h-16 animate-pulse rounded-2xl border border-black/5 bg-white/50"
+          className="h-16 animate-pulse rounded-lg border border-gray-200 bg-white/50"
         />
       ))}
     </div>
@@ -380,7 +383,7 @@ function BasicsSkeleton() {
       {Array.from({ length: 5 }).map((_, index) => (
         <div
           key={index}
-          className="h-16 animate-pulse rounded-2xl border border-black/5 bg-white/50"
+          className="h-16 animate-pulse rounded-lg border border-gray-200 bg-white/50"
         />
       ))}
     </div>
@@ -389,7 +392,7 @@ function BasicsSkeleton() {
 
 function SummarySkeleton() {
   return (
-    <div className="space-y-4 rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm">
+    <div className="space-y-4 rounded-lg border border-gray-200 bg-white/80 p-6 shadow-sm">
       <div className="space-y-2">
         <div className="h-3 w-24 animate-pulse rounded-full bg-slate-200" />
         <div className="h-4 w-40 animate-pulse rounded-full bg-slate-200" />
@@ -399,14 +402,14 @@ function SummarySkeleton() {
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
-            className="flex items-center gap-3 rounded-xl border border-slate-200/70 bg-white/60 p-3"
+            className="flex items-center gap-3 rounded-lg border border-gray-200/70 bg-white/60 p-3"
           >
             <div className="h-8 w-8 rounded-full bg-slate-200" />
             <div className="h-3 flex-1 animate-pulse rounded-full bg-slate-200" />
           </div>
         ))}
       </div>
-      <div className="space-y-2 rounded-xl bg-slate-900/10 p-4">
+      <div className="space-y-2 rounded-lg bg-slate-900/10 p-4">
         <div className="h-3 w-24 animate-pulse rounded-full bg-slate-200" />
         <div className="h-4 w-32 animate-pulse rounded-full bg-slate-300" />
       </div>

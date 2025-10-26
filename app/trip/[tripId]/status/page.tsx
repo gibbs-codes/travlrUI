@@ -3,19 +3,29 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Plane, Building2, Compass, UtensilsCrossed, Car, CheckCircle2, Loader2 } from 'lucide-react';
 import { Background } from '../../../components/Background';
 import { GlassCard } from '../../../components/GlassCard';
 import { Heading, Text } from '../../../components/Typography';
 import { Container, Section } from '../../../components/Layout';
 import { TopBar } from '../../../components/Navigation';
+import { ErrorMessage } from '../../../components/ErrorMessage';
 import { tripAPI } from '../../../lib/api';
 
 const AGENT_CONFIG = [
-  { id: 'flight', name: 'Flight Agent', icon: '✈️' },
-  { id: 'accommodation', name: 'Accommodation Agent', icon: '🏨' },
-  { id: 'activity', name: 'Activity Agent', icon: '🎭' },
-  { id: 'restaurant', name: 'Restaurant Agent', icon: '🍽️' },
-  { id: 'transportation', name: 'Transportation Agent', icon: '🚗' }
+  { id: 'flight', name: 'Flight Agent', icon: Plane },
+  { id: 'accommodation', name: 'Accommodation Agent', icon: Building2 },
+  { id: 'activity', name: 'Activity Agent', icon: Compass },
+  { id: 'restaurant', name: 'Restaurant Agent', icon: UtensilsCrossed },
+  { id: 'transportation', name: 'Transportation Agent', icon: Car }
+];
+
+// Sequential order for display (exclude transportation from user-facing UI)
+const SEQUENTIAL_AGENTS = [
+  { id: 'accommodation', name: 'Accommodation', icon: Building2 },
+  { id: 'flight', name: 'Flights', icon: Plane },
+  { id: 'activity', name: 'Activities', icon: Compass },
+  { id: 'restaurant', name: 'Restaurants', icon: UtensilsCrossed },
 ];
 
 const POLL_INTERVAL = 3000;
@@ -198,28 +208,11 @@ export default function TripStatus() {
         <Container>
           <Section width="narrow">
             <GlassCard>
-              <div style={{ textAlign: 'center' }}>
-                <span style={{ fontSize: '4rem' }}>⚠️</span>
-                <Heading level={2} elegant>Error Loading Trip Status</Heading>
-                <Text style={{ marginBottom: 'var(--space-4)' }}>{error}</Text>
-                <button
-                  onClick={handleRetry}
-                  style={{
-                    padding: 'var(--space-3) var(--space-6)',
-                    background: 'rgba(255, 255, 255, 0.25)',
-                    border: '1px solid rgba(255, 255, 255, 0.4)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--color-text-primary)',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: 'var(--weight-medium)',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all var(--transition-base)'
-                  }}
-                >
-                  Retry
-                </button>
-              </div>
+              <ErrorMessage
+                title="Unable to load trip status"
+                message="We're having trouble connecting to our travel agents. Please check your connection and try again."
+                onRetry={handleRetry}
+              />
             </GlassCard>
           </Section>
         </Container>
@@ -316,107 +309,64 @@ export default function TripStatus() {
               </div>
             </div>
 
-            {/* Agent Status Grid */}
-            <div style={{ marginTop: 'var(--space-7)' }}>
-              <Text style={{
-                fontSize: '0.85rem',
-                textTransform: 'uppercase',
-                letterSpacing: '1.5px',
-                marginBottom: 'var(--space-5)',
-                opacity: 0.7,
-                fontFamily: 'var(--font-display)',
-                textAlign: 'center'
-              }}>
-                AI Agents at Work
-              </Text>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: 'var(--space-5)'
-              }}>
-                {AGENT_CONFIG.map((agent, index) => {
+            {/* Sequential Agent Progress */}
+            <div className="mt-7 mx-auto max-w-2xl px-4">
+              <div className="flex flex-col gap-3">
+                {SEQUENTIAL_AGENTS.map((agent, index) => {
                   const status = agentStatuses[agent.id] || 'pending';
                   const count = recommendationCounts[agent.id] || 0;
 
                   return (
                     <motion.div
                       key={agent.id}
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.12, type: 'spring', stiffness: 100 }}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-md transition-all ${
+                        status === 'running'
+                          ? 'bg-blue-500/10 border border-blue-500/30'
+                          : 'bg-white/5 border border-white/10'
+                      }`}
                     >
-                      <div style={{
-                        position: 'relative',
-                        padding: 'var(--space-6)',
-                        background: status === 'running'
-                          ? 'rgba(245, 169, 98, 0.15)'
-                          : status === 'completed'
-                          ? 'rgba(76, 175, 80, 0.12)'
-                          : 'rgba(255, 255, 255, 0.1)',
-                        border: `2px solid ${
-                          status === 'running'
-                            ? 'rgba(245, 169, 98, 0.4)'
-                            : status === 'completed'
-                            ? 'rgba(76, 175, 80, 0.4)'
-                            : 'rgba(255, 255, 255, 0.2)'
-                        }`,
-                        borderRadius: 'var(--radius-lg)',
-                        transition: 'all var(--transition-base)',
-                        backdropFilter: 'blur(10px)',
-                        boxShadow: status === 'running'
-                          ? '0 8px 32px rgba(245, 169, 98, 0.25)'
-                          : status === 'completed'
-                          ? '0 8px 32px rgba(76, 175, 80, 0.2)'
-                          : 'none',
-                        minHeight: '200px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        {/* Agent Icon Badge */}
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          style={{
-                            position: 'absolute',
-                            top: '-20px',
-                            width: '56px',
-                            height: '56px',
-                            background: 'rgba(255, 255, 255, 0.25)',
-                            backdropFilter: 'blur(15px)',
-                            border: '2px solid rgba(255, 255, 255, 0.3)',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '1.8rem',
-                            boxShadow: 'var(--shadow-glass)'
-                          }}
-                        >
-                          {agent.icon}
-                        </motion.div>
+                      {/* Status Icon */}
+                      <div style={{ flexShrink: 0 }}>
+                        {status === 'completed' && (
+                          <CheckCircle2 className="h-5 w-5 text-gray-400" />
+                        )}
+                        {status === 'running' && (
+                          <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                        )}
+                        {status === 'pending' && (
+                          <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
+                        )}
+                      </div>
 
-                        {/* Status Icon */}
-                        <div style={{ marginTop: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
-                          <AgentStatusIcon status={status} />
-                        </div>
+                      {/* Agent Icon */}
+                      <div style={{ flexShrink: 0 }}>
+                        <agent.icon className={`h-5 w-5 ${
+                          status === 'completed' ? 'text-gray-400' :
+                          status === 'running' ? 'text-blue-500' :
+                          'text-gray-500/50'
+                        }`} />
+                      </div>
 
-                        {/* Agent Name */}
-                        <Text style={{
-                          textAlign: 'center',
-                          fontWeight: 'var(--weight-semibold)',
-                          fontSize: '1.1rem',
-                          marginBottom: 'var(--space-3)',
-                          fontFamily: 'var(--font-display)',
-                          letterSpacing: '0.3px'
-                        }}>
+                      {/* Agent Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm sm:text-base font-medium ${
+                          status === 'pending' ? 'text-white/40' : 'text-gray-700'
+                        } ${status === 'completed' ? 'mb-0.5' : ''}`}>
                           {agent.name}
-                        </Text>
-
-                        {/* Status Text */}
-                        <div style={{ textAlign: 'center', fontSize: '0.9rem', minHeight: '28px' }}>
-                          <AgentStatusText status={status} count={count} />
-                        </div>
+                        </p>
+                        {status === 'completed' && count > 0 && (
+                          <p className="text-xs text-gray-500">
+                            {count} option{count !== 1 ? 's' : ''} found
+                          </p>
+                        )}
+                        {status === 'running' && (
+                          <p className="text-xs text-blue-500 italic">
+                            Searching...
+                          </p>
+                        )}
                       </div>
                     </motion.div>
                   );

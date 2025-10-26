@@ -11,16 +11,38 @@
   --color-primary-500: #d96217;
   --color-primary-600: #cc5714;
   
+  /* Gray Scale for Cards/Components */
+  --gray-50: rgb(249 250 251);
+  --gray-100: rgb(243 244 246);
+  --gray-200: rgb(229 231 235);
+  --gray-300: rgb(209 213 219);
+  --gray-400: rgb(156 163 175);
+  --gray-500: rgb(107 114 128);
+  --gray-600: rgb(75 85 99);
+  --gray-700: rgb(55 65 81);
+  --gray-800: rgb(31 41 55);
+  --gray-900: rgb(17 24 39);
+
   /* Text Colors */
   --color-text-primary: #ffffff;
   --color-text-secondary: rgba(255, 255, 255, 0.95);
   --color-text-muted: rgba(255, 255, 255, 0.7);
-  
+
+  /* Text Colors for Cards (dark on light) */
+  --text-dark-primary: var(--gray-900);
+  --text-dark-secondary: var(--gray-700);
+  --text-dark-muted: var(--gray-500);
+
   /* Glass Effect */
   --glass-bg: rgba(255, 255, 255, 0.15);
   --glass-border: rgba(255, 255, 255, 0.25);
   --glass-border-hover: rgba(255, 255, 255, 0.35);
   --glass-blur: blur(20px);
+
+  /* Card Colors */
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-border: var(--gray-200);
+  --card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   
   /* Typography */
   --font-display: 'Cormorant', serif;
@@ -58,9 +80,13 @@
   --shadow-glass-hover: 0 12px 48px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   
   /* Transitions */
-  --transition-fast: 0.15s ease;
-  --transition-base: 0.3s ease;
-  --transition-slow: 0.5s ease;
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* Interactive States */
+  --hover-lift: translateY(-1px);
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Global Styles */
@@ -72,10 +98,11 @@
 
 body {
   font-family: var(--font-body);
-  font-weight: var(--weight-light);
-  line-height: 1.8;
-  color: var(--color-text-primary);
-  background: var(--color-primary-600);
+  font-weight: 400;
+  line-height: 1.6;
+  /* Simplified for debugging - dark text on light bg */
+  color: #111827;
+  background: #f3f4f6;
   overflow-x: hidden;
 }
 

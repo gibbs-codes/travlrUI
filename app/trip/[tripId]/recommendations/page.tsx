@@ -14,6 +14,9 @@ import {
 import { SectionHeader } from '../../../components/SectionHeader';
 import { StickyTripSummary } from '../../../components/StickyTripSummary';
 import { LockedSection } from '../../../components/LockedSection';
+import { SkeletonStack as BaseSkeletonStack } from '../../../components/Skeleton';
+import { ErrorMessage } from '../../../components/ErrorMessage';
+import { EmptyState as BaseEmptyState } from '../../../components/EmptyState';
 import { tripAPI } from '../../../lib/api';
 import {
   normalizeTripResponse,
@@ -217,7 +220,7 @@ export default function Recommendations() {
       <TopBar logo="Travlr" navText="home" />
 
       <main className="relative z-10">
-        <div className="mx-auto max-w-6xl px-4 pb-16 pt-12 lg:px-6">
+        <div className="mx-auto max-w-6xl px-4 pb-16 pt-24 lg:px-6">
           {/* Two-column grid keeps the summary in view on desktop while preserving a single column on mobile. */}
           <header className="mb-8 space-y-1.5">
             <p className="text-xs uppercase tracking-wide text-gray-500">
@@ -233,11 +236,15 @@ export default function Recommendations() {
           </header>
 
           {error && !data && (
-            <ErrorBanner message={error} onRetry={fetchTrip} />
+            <ErrorMessage
+              title="Unable to load recommendations"
+              message={error}
+              onRetry={fetchTrip}
+            />
           )}
 
-          <div className="flex flex-col gap-12 lg:grid lg:grid-cols-[1fr_360px] lg:gap-6">
-            <div className="space-y-12">
+          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_360px] lg:gap-5">
+            <div className="space-y-8">
               <section ref={flightRef} id="flights">
                 <SectionHeader
                   title="Flights"
@@ -252,10 +259,18 @@ export default function Recommendations() {
                   }
                 />
 
-                <div className="mt-5 space-y-3">
-                  {isLoading && <SkeletonStack />}
+                <div className="mt-4 space-y-2.5">
+                  {isLoading && <BaseSkeletonStack count={3} />}
                   {!isLoading && flights.length === 0 && (
-                    <EmptyState onClear={handleClearFilters} />
+                    <BaseEmptyState
+                      icon="search"
+                      title="No flights found"
+                      message="Try adjusting your filters or check back later for more options."
+                      action={{
+                        label: 'Clear filters',
+                        onClick: handleClearFilters,
+                      }}
+                    />
                   )}
                   {!isLoading &&
                     flights.map((flight) => (
@@ -277,8 +292,8 @@ export default function Recommendations() {
                   title="Stay vibes"
                   description="A cozy home-base to match the mood."
                 />
-                <div className="mt-5 space-y-3">
-                  {isLoading && <SkeletonStack />}
+                <div className="mt-4 space-y-2.5">
+                  {isLoading && <BaseSkeletonStack count={3} />}
                   {!isLoading &&
                     data?.stays.map((stay) => (
                       <ResultCard
@@ -290,10 +305,11 @@ export default function Recommendations() {
                       />
                     ))}
                   {!isLoading && (data?.stays.length ?? 0) === 0 && (
-                    <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
-                      Nothing matches just yet. Loosen filters or check back
-                      after we fetch more stays.
-                    </p>
+                    <BaseEmptyState
+                      icon="inbox"
+                      title="No accommodations available"
+                      message="We're still searching for the perfect places to stay. Check back in a moment."
+                    />
                   )}
                 </div>
               </section>
@@ -311,8 +327,8 @@ export default function Recommendations() {
                       title="Getting around"
                       description="Pick the transit plan that feels easy."
                     />
-                    <div className="mt-5 space-y-3">
-                      {isLoading && <SkeletonStack />}
+                    <div className="mt-4 space-y-2.5">
+                      {isLoading && <BaseSkeletonStack count={2} />}
                       {!isLoading &&
                         data?.transit.map((option) => (
                           <ResultCard
@@ -326,9 +342,11 @@ export default function Recommendations() {
                           />
                         ))}
                       {!isLoading && (data?.transit.length ?? 0) === 0 && (
-                        <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
-                          We&apos;ll add transit options as soon as we find good matches.
-                        </p>
+                        <BaseEmptyState
+                          icon={<Car className="h-12 w-12 text-gray-400" />}
+                          title="No transit options yet"
+                          message="We're looking for the best ways to get around. Transit options will appear here soon."
+                        />
                       )}
                     </div>
                   </>
@@ -348,8 +366,8 @@ export default function Recommendations() {
                       title="Food & sips"
                       description="Save the spots you want to taste."
                     />
-                    <div className="mt-5 space-y-3">
-                      {isLoading && <SkeletonStack />}
+                    <div className="mt-4 space-y-2.5">
+                      {isLoading && <BaseSkeletonStack count={4} />}
                       {!isLoading &&
                         data?.restaurants.map((restaurant) => (
                           <ResultCard
@@ -363,22 +381,24 @@ export default function Recommendations() {
                           />
                         ))}
                       {!isLoading && (data?.restaurants.length ?? 0) === 0 && (
-                        <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
-                          No eats yet — once they land you can save your shortlist here.
-                        </p>
+                        <BaseEmptyState
+                          icon={<UtensilsCrossed className="h-12 w-12 text-gray-400" />}
+                          title="No restaurants yet"
+                          message="We're finding the best places to eat nearby. Your dining options will appear here soon."
+                        />
                       )}
                     </div>
                   </>
                 )}
               </section>
 
-              <footer className="rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm">
+              <footer className="rounded-lg border border-gray-200 bg-white/80 p-6 shadow-sm">
                 {actionError && (
-                  <p className="mb-3 text-sm text-rose-500">{actionError}</p>
+                  <p className="mb-3 text-sm text-red-600">{actionError}</p>
                 )}
                 <div className="flex flex-wrap items-center gap-3">
                   {total && (
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
                       Estimated total · {formatMoney(total)}
                     </span>
                   )}
@@ -386,7 +406,7 @@ export default function Recommendations() {
                     type="button"
                     onClick={handleSaveSelections}
                     disabled={isSaving || !data}
-                    className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
                   >
                     {isSaving ? 'Saving...' : 'Save & view overview'}
                   </button>
@@ -463,22 +483,9 @@ function departureValue(iso: string | undefined) {
   return Number.isNaN(value) ? Number.POSITIVE_INFINITY : value;
 }
 
-function SkeletonStack({ rows = 3 }: { rows?: number }) {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: rows }).map((_, index) => (
-        <div
-          key={index}
-          className="h-32 animate-pulse rounded-2xl border border-black/5 bg-white/40"
-        />
-      ))}
-    </div>
-  );
-}
-
 function SummarySkeleton() {
   return (
-    <div className="space-y-4 rounded-2xl border border-black/5 bg-white/80 p-6 shadow-sm">
+    <div className="space-y-4 rounded-lg border border-gray-200 bg-white/80 p-6 shadow-sm">
       <div className="space-y-2">
         <div className="h-3 w-24 animate-pulse rounded-full bg-slate-200" />
         <div className="h-4 w-40 animate-pulse rounded-full bg-slate-200" />
@@ -488,53 +495,17 @@ function SummarySkeleton() {
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
-            className="flex items-center gap-3 rounded-xl border border-slate-200/70 bg-white/60 p-3"
+            className="flex items-center gap-3 rounded-lg border border-gray-200/70 bg-white/60 p-3"
           >
             <div className="h-8 w-8 rounded-full bg-slate-200" />
             <div className="h-3 flex-1 animate-pulse rounded-full bg-slate-200" />
           </div>
         ))}
       </div>
-      <div className="space-y-2 rounded-xl bg-slate-900/10 p-4">
+      <div className="space-y-2 rounded-lg bg-slate-900/10 p-4">
         <div className="h-3 w-24 animate-pulse rounded-full bg-slate-200" />
         <div className="h-4 w-32 animate-pulse rounded-full bg-slate-300" />
       </div>
-    </div>
-  );
-}
-
-function EmptyState({ onClear }: { onClear: () => void }) {
-  return (
-    <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-sm text-slate-500">
-      <p>Nothing matches your filters right now.</p>
-      <button
-        type="button"
-        onClick={onClear}
-        className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-100"
-      >
-        Clear filters →
-      </button>
-    </div>
-  );
-}
-
-function ErrorBanner({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry: () => void;
-}) {
-  return (
-    <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-700">
-      <p>{message}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
-      >
-        Try again
-      </button>
     </div>
   );
 }

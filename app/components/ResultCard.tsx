@@ -55,7 +55,7 @@ type ResultCardProps =
     };
 
 const CARD_BASE =
-  'group relative rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 shadow-sm hover:shadow-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500';
+  'group relative rounded-lg border border-gray-200 bg-white/80 backdrop-blur-sm p-3 shadow-sm hover:shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500';
 const CARD_SELECTED = 'border-emerald-400/70 bg-emerald-50/80';
 
 const BADGE_CLASSES =
@@ -144,8 +144,8 @@ export function ResultCard(props: ResultCardProps) {
         <CardImage src={imageUrl} alt={imageAlt || title} />
       )}
 
-      <div className="flex items-start gap-3">
-        <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900/5 text-slate-700">
+      <div className="flex items-start gap-2.5">
+        <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900/5 text-slate-700">
           {icon}
         </div>
         <div className="flex-1">
@@ -164,9 +164,9 @@ export function ResultCard(props: ResultCardProps) {
           </div>
 
           {meta.length > 0 && (
-            <dl className="mt-3 grid grid-cols-1 gap-2 text-sm text-gray-700 sm:grid-cols-2">
+            <dl className="mt-2 grid grid-cols-1 gap-1.5 text-sm text-gray-700 sm:grid-cols-2">
               {meta.map(({ label, value, icon: metaIcon }) => (
-                <div key={label} className="flex items-center gap-2">
+                <div key={label} className="flex items-center gap-1.5">
                   {metaIcon}
                   <div>
                     <dt className="sr-only">{label}</dt>
@@ -179,7 +179,7 @@ export function ResultCard(props: ResultCardProps) {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-200/70 pt-3 text-sm">
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-200/70 pt-2.5 text-sm">
         {price && (
           <span className="text-base font-semibold text-gray-900">
             {price}
@@ -198,7 +198,7 @@ export function ResultCard(props: ResultCardProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline transition"
+            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline transition-colors duration-150"
           >
             {bookingLabel || 'View details'}
             <ExternalLink className="h-3 w-3" />
@@ -208,8 +208,10 @@ export function ResultCard(props: ResultCardProps) {
         <button
           type="button"
           onClick={handleActionClick}
-          className={`ml-auto inline-flex items-center rounded-xl bg-slate-900 text-white px-3 py-2 text-sm font-medium shadow-sm transition hover:bg-slate-800 ${
-            isSelected ? 'bg-emerald-600 hover:bg-emerald-500' : ''
+          className={`ml-auto inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+            isSelected
+              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+              : 'bg-gray-900 text-white hover:bg-gray-800'
           }`}
         >
           {actionLabel}

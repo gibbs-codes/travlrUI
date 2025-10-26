@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
+/// <reference types="google.maps" />
+
 interface PlaceResult {
   name: string;
   formatted_address: string;
@@ -21,7 +23,7 @@ export function useGooglePlacesAutocomplete({
   types = ['(cities)'],
 }: UseGooglePlacesAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const autocompleteRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string>('');
@@ -58,6 +60,7 @@ export function useGooglePlacesAutocomplete({
 
       try {
         // Create autocomplete instance
+        const google = (window as any).google;
         autocompleteRef.current = new google.maps.places.Autocomplete(
           inputRef.current,
           {
@@ -192,7 +195,8 @@ export function useGooglePlacesAutocomplete({
 
     // Cleanup
     return () => {
-      if (autocompleteRef.current) {
+      if (autocompleteRef.current && (window as any).google) {
+        const google = (window as any).google;
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };

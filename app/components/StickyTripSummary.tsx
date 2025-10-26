@@ -1,5 +1,6 @@
 'use client';
 
+import { ReactElement } from 'react';
 import { Plane, Bed, TrainFront, UtensilsCrossed, Users, Printer } from 'lucide-react';
 import { formatDateTime, formatDuration, formatMoney, formatRoute } from '../lib/formatters';
 import type { Flight, Trip } from '../lib/types';
@@ -36,7 +37,7 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
     label: string;
     hasSelection: boolean;
     summary: string;
-    icon: JSX.Element;
+    icon: ReactElement;
   }> = [
     {
       kind: 'flight',
@@ -85,8 +86,8 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
   ];
 
   return (
-    <aside className="sticky top-4 h-fit space-y-4 rounded-2xl border border-black/5 bg-white/80 p-5 shadow-sm backdrop-blur">
-      <header className="space-y-1">
+    <aside className="sticky top-4 h-fit space-y-3 rounded-lg border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+      <header className="space-y-0.5">
         <p className="text-xs uppercase tracking-wide text-gray-500">
           Trip summary
         </p>
@@ -100,14 +101,14 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
         </p>
       </header>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {rows.map((row) => (
           <div
             key={row.kind}
-            className="flex items-start gap-3 rounded-xl border border-slate-200/60 bg-white/70 px-3 py-2.5"
+            className="flex items-start gap-2.5 rounded-lg border border-gray-200/60 bg-white/70 px-2.5 py-2"
           >
             <span
-              className={`mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${
+              className={`mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full ${
                 row.hasSelection
                   ? 'bg-emerald-100 text-emerald-700'
                   : 'bg-slate-100 text-slate-400'
@@ -116,7 +117,7 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
               {row.icon}
             </span>
             <div className="flex-1">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-gray-900">{row.label}</p>
                 <button
                   type="button"
@@ -127,7 +128,7 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
                 </button>
               </div>
               <p
-                className={`mt-0.5 text-sm ${
+                className={`mt-0.5 text-xs ${
                   row.hasSelection ? 'text-gray-600' : 'text-gray-400'
                 }`}
               >
@@ -138,7 +139,7 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
         ))}
       </div>
 
-      <div className="space-y-2 rounded-2xl bg-slate-900 px-4 py-4 text-white">
+      <div className="space-y-1.5 rounded-lg bg-slate-900 px-3 py-3 text-white">
         <p className="text-xs uppercase tracking-wide text-slate-300">
           Estimated total
         </p>
@@ -152,7 +153,7 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
         <button
           type="button"
           onClick={onPrint}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-500"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-150 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
         >
           <Printer className="h-4 w-4" />
           Print itinerary
@@ -160,7 +161,7 @@ export function StickyTripSummary({ trip, onEdit, onPrint }: StickyTripSummaryPr
         <button
           type="button"
           onClick={() => onEdit('flight')}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-slate-50"
+          className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
         >
           Review selections
         </button>

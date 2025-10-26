@@ -5,20 +5,6 @@
   width: 100%;
   height: 100%;
   z-index: -1;
-  background: radial-gradient(
-    ellipse at 20% 20%,
-    var(--color-primary-100) 0%,
-    var(--color-primary-200) 25%,
-    var(--color-primary-300) 50%,
-    var(--color-primary-400) 75%,
-    var(--color-primary-500) 100%
-  );
-  background-size: 150% 150%;
-  animation: warmGradientFlow 25s ease infinite;
-}
-
-@keyframes warmGradientFlow {
-  0% { background-position: 0% 0%; }
-  50% { background-position: 100% 100%; }
-  100% { background-position: 0% 0%; }
+  /* Simplified solid background for debugging */
+  background: #f3f4f6;
 }

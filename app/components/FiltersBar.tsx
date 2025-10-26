@@ -15,7 +15,7 @@ type FiltersBarProps = {
 };
 
 const pillBase =
-  'inline-flex items-center gap-2 rounded-full border border-slate-200/80 px-3 py-1 text-xs font-medium transition';
+  'inline-flex items-center gap-2 rounded-full border border-gray-200/80 px-3 py-1 text-xs font-medium transition';
 const pillActive = 'border-emerald-400/60 bg-emerald-50 text-emerald-700';
 const pillInactive = 'bg-white text-slate-600 hover:bg-slate-100';
 
@@ -33,7 +33,7 @@ export function FiltersBar({
         <select
           value={sort}
           onChange={(event) => onSortChange(event.target.value as FlightSort)}
-          className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
         >
           <option value="price-asc">Price · Low to High</option>
           <option value="price-desc">Price · High to Low</option>

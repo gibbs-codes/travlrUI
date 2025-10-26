@@ -15,7 +15,7 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   // Establishes consistent heading sizing + divider treatment across sections.
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200/70 pb-3">
+    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-gray-200/70 pb-3">
       <div>
         <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
         {description && <p className="text-sm text-slate-500">{description}</p>}

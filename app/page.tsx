@@ -43,19 +43,17 @@ export default function Home() {
                 onMouseLeave={() => setIsHovered(false)}
                 style={{
                   display: 'inline-block',
-                  padding: 'var(--space-3) var(--space-6)',
-                  background: isHovered ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.25)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.4)',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--color-text-primary)',
+                  padding: '1rem 2rem',
+                  background: isHovered ? '#111827' : '#1f2937',
+                  border: '2px solid #111827',
+                  borderRadius: '0.5rem',
+                  color: 'white',
                   textDecoration: 'none',
-                  fontWeight: 'var(--weight-medium)',
-                  transition: 'all var(--transition-base)',
+                  fontWeight: '600',
+                  transition: 'all 150ms ease',
                   fontSize: '1.1rem',
-                  letterSpacing: '0.5px',
-                  transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-                  boxShadow: isHovered ? 'var(--shadow-glass-hover)' : 'none'
+                  transform: isHovered ? 'translateY(-1px)' : 'translateY(0)',
+                  boxShadow: isHovered ? '0 4px 6px rgba(0,0,0,0.1)' : '0 1px 2px rgba(0,0,0,0.05)'
                 }}
               >
                 Start Planning →

@@ -1,7 +1,8 @@
 .container {
   max-width: 1300px;
   margin: 0 auto;
-  padding: var(--space-6);
+  /* Add top padding to account for fixed header (approx 70px) */
+  padding: 5rem var(--space-6) var(--space-6);
 }
 
 .contentSection {
@@ -20,12 +21,28 @@
   margin-right: auto;
 }
 
+@media (max-width: 1024px) {
+  .container {
+    padding: var(--space-4);
+  }
+}
+
 @media (max-width: 768px) {
   .container {
     padding: var(--space-3);
   }
-  
+
   .contentSection {
     margin: var(--space-6) 0;
+  }
+}
+
+@media (max-width: 414px) {
+  .container {
+    padding: var(--space-2);
+  }
+
+  .contentSection {
+    margin: var(--space-4) 0;
   }
 }
