@@ -10,7 +10,7 @@ import { Heading, Text } from '../../../components/Typography';
 import { Container, Section } from '../../../components/Layout';
 import { TopBar } from '../../../components/Navigation';
 import { ErrorMessage } from '../../../components/ErrorMessage';
-import { tripAPI } from '../../../lib/api';
+import { tripService } from '../../../lib/api';
 
 const AGENT_CONFIG = [
   { id: 'flight', name: 'Flight Agent', icon: Plane },
@@ -150,13 +150,12 @@ export default function TripStatus() {
 
   const fetchTripStatus = async () => {
     try {
-      const response = await tripAPI.getStatus(tripId);
-      // Handle both wrapped and unwrapped response formats
-      const data = response.data?.data || response.data;
+      const data = await tripService.getTripStatus(tripId);
 
       setTripData(data);
-      setAgentStatuses(data.execution?.agents || {});
-      setRecommendationCounts(data.recommendationCounts || {});
+      // Handle both possible response structures
+      setAgentStatuses((data as any).execution?.agents || {});
+      setRecommendationCounts((data as any).recommendationCounts || {});
       setError(null);
 
       if (data.status === 'recommendations_ready') {

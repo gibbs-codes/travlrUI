@@ -1,216 +1,73 @@
-import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
-import {
+/**
+ * DEPRECATED: This file is maintained for backward compatibility.
+ * New code should use the modular services in app/lib/api/
+ *
+ * Import like this:
+ * import { tripService, flightService } from '@/app/lib/api';
+ */
+
+import { tripService } from './api/tripService';
+import { flightService } from './api/flightService';
+import { hotelService } from './api/hotelService';
+import { experienceService } from './api/experienceService';
+import { restaurantService } from './api/restaurantService';
+import { apiClient } from './api/baseService';
+import type {
   TripRequest,
   TripResponse,
   TripStatusResponse,
   SelectionRequest,
   SelectionResponse,
-  TripAPIError,
 } from './types';
 
-// ============================================================================
-// API Configuration
-// ============================================================================
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://jamess-mac-mini:3006';
-const API_TIMEOUT = 30000; // 30 seconds
-
-// Create axios instance with default config
-const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: API_TIMEOUT,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// Re-export all services for easy access
+export { tripService, flightService, hotelService, experienceService, restaurantService };
 
 // ============================================================================
-// Request Interceptor
-// ============================================================================
-
-apiClient.interceptors.request.use(
-  (config) => {
-    // Add timestamp to requests for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, {
-        data: config.data,
-        params: config.params,
-      });
-    }
-    return config;
-  },
-  (error) => {
-    console.error('[API Request Error]', error);
-    return Promise.reject(error);
-  }
-);
-
-// ============================================================================
-// Response Interceptor
-// ============================================================================
-
-apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[API Response] ${response.config.url}`, response.data);
-    }
-    return response;
-  },
-  (error: AxiosError) => {
-    return Promise.reject(handleAPIError(error));
-  }
-);
-
-// ============================================================================
-// Error Handler
-// ============================================================================
-
-function handleAPIError(error: AxiosError): TripAPIError {
-  if (error.response) {
-    // Server responded with error status
-    const status = error.response.status;
-    const data = error.response.data as any;
-
-    let message = 'An error occurred while processing your request';
-    let code = 'UNKNOWN_ERROR';
-
-    if (data?.message) {
-      message = data.message;
-    } else if (data?.error) {
-      message = data.error;
-    } else {
-      // Default messages based on status code
-      switch (status) {
-        case 400:
-          message = 'Invalid request. Please check your input.';
-          code = 'BAD_REQUEST';
-          break;
-        case 401:
-          message = 'Authentication required.';
-          code = 'UNAUTHORIZED';
-          break;
-        case 403:
-          message = 'You do not have permission to perform this action.';
-          code = 'FORBIDDEN';
-          break;
-        case 404:
-          message = 'The requested resource was not found.';
-          code = 'NOT_FOUND';
-          break;
-        case 500:
-          message = 'Server error. Please try again later.';
-          code = 'INTERNAL_SERVER_ERROR';
-          break;
-        case 503:
-          message = 'Service temporarily unavailable. Please try again later.';
-          code = 'SERVICE_UNAVAILABLE';
-          break;
-      }
-    }
-
-    if (data?.code) {
-      code = data.code;
-    }
-
-    console.error(`[API Error] ${status} - ${message}`, {
-      code,
-      url: error.config?.url,
-      data: error.response.data,
-    });
-
-    return new TripAPIError(message, code, status, data);
-  } else if (error.request) {
-    // Request was made but no response received
-    console.error('[API Error] No response received', {
-      url: error.config?.url,
-      timeout: error.code === 'ECONNABORTED',
-    });
-
-    const message = error.code === 'ECONNABORTED'
-      ? 'Request timed out. Please check your connection and try again.'
-      : 'Unable to reach the server. Please check your connection.';
-
-    return new TripAPIError(message, 'NETWORK_ERROR', 0);
-  } else {
-    // Error setting up the request
-    console.error('[API Error] Request setup failed', error.message);
-    return new TripAPIError(
-      error.message || 'An unexpected error occurred',
-      'REQUEST_SETUP_ERROR'
-    );
-  }
-}
-
-// ============================================================================
-// API Service Functions
+// Backward Compatibility - Delegate to new services
 // ============================================================================
 
 /**
  * Create a new trip
+ * @deprecated Use tripService.createTrip() instead
  */
 export async function createTrip(data: TripRequest): Promise<TripResponse> {
-  try {
-    const response = await apiClient.post<TripResponse>('/api/trip/create', data);
-    return response.data;
-  } catch (error) {
-    throw error instanceof TripAPIError ? error : new TripAPIError('Failed to create trip');
-  }
+  return tripService.createTrip(data);
 }
 
 /**
  * Get trip status (for polling during AI agent processing)
+ * @deprecated Use tripService.getTripStatus() instead
  */
 export async function getTripStatus(tripId: string): Promise<TripStatusResponse> {
-  try {
-    const response = await apiClient.get<TripStatusResponse>(`/api/trip/${tripId}/status`);
-    return response.data;
-  } catch (error) {
-    throw error instanceof TripAPIError ? error : new TripAPIError('Failed to fetch trip status');
-  }
+  return tripService.getTripStatus(tripId);
 }
 
 /**
  * Get full trip details including recommendations
+ * @deprecated Use tripService.getTripDetails() instead
  */
 export async function getTripDetails(tripId: string): Promise<TripResponse> {
-  try {
-    const response = await apiClient.get<TripResponse>(`/api/trip/${tripId}`);
-    return response.data;
-  } catch (error) {
-    throw error instanceof TripAPIError ? error : new TripAPIError('Failed to fetch trip details');
-  }
+  return tripService.getTripDetails(tripId);
 }
 
 /**
  * Submit user's selected recommendations
+ * @deprecated Use tripService.selectRecommendations() instead
  */
 export async function selectRecommendations(
   tripId: string,
   selections: SelectionRequest
 ): Promise<SelectionResponse> {
-  try {
-    const response = await apiClient.put<SelectionResponse>(
-      `/api/trip/${tripId}/select`,
-      selections
-    );
-    return response.data;
-  } catch (error) {
-    throw error instanceof TripAPIError
-      ? error
-      : new TripAPIError('Failed to save selections');
-  }
+  return tripService.selectRecommendations(tripId, selections);
 }
 
 /**
  * Delete a trip (optional - for cleanup)
+ * @deprecated Use tripService.deleteTrip() instead
  */
 export async function deleteTrip(tripId: string): Promise<{ message: string }> {
-  try {
-    const response = await apiClient.delete<{ message: string }>(`/api/trip/${tripId}`);
-    return response.data;
-  } catch (error) {
-    throw error instanceof TripAPIError ? error : new TripAPIError('Failed to delete trip');
-  }
+  return tripService.deleteTrip(tripId);
 }
 
 // ============================================================================
@@ -261,13 +118,13 @@ export async function pollTripStatus(
 
         // Check if failed
         if (status.status === 'failed') {
-          reject(new TripAPIError('Trip processing failed', 'PROCESSING_FAILED'));
+          reject(new Error('Trip processing failed'));
           return;
         }
 
         // Check timeout
         if (Date.now() - startTime > timeout) {
-          reject(new TripAPIError('Trip processing timed out', 'POLLING_TIMEOUT'));
+          reject(new Error('Trip processing timed out'));
           return;
         }
 

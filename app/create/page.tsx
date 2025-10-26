@@ -8,7 +8,7 @@ import { GlassCard } from '../components/GlassCard';
 import { Heading, Text } from '../components/Typography';
 import { Container, Section } from '../components/Layout';
 import { TopBar } from '../components/Navigation';
-import { tripAPI } from '../lib/api';
+import { tripService } from '../lib/api';
 import { buildCreateTripPayload } from '../lib/buildCreateTripPayload';
 import type { TripRequest } from '../lib/types';
 import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplete';
@@ -258,7 +258,7 @@ export default function CreateTrip() {
 
       let statusData: any;
       try {
-        const statusResponse = await tripAPI.getStatus(tripId);
+        const statusResponse = await tripService.getTripStatus(tripId);
         statusData = extractData(statusResponse);
         finalStatusData = statusData;
       } catch (error) {
@@ -301,7 +301,7 @@ export default function CreateTrip() {
     setStatusMessage('Loading your trip details...');
 
     try {
-      await tripAPI.get(tripId);
+      await tripService.getTripDetails(tripId);
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }
@@ -311,7 +311,7 @@ export default function CreateTrip() {
 
   const runCreateFlow = async (payload: TripRequest) => {
     setStatusMessage('Creating your trip request...');
-    const response = await tripAPI.create(payload);
+    const response = await tripService.createTrip(payload);
     const data = extractData(response);
     const tripId = extractTripId(data);
 

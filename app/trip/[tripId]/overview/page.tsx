@@ -8,7 +8,7 @@ import { TopBar } from '../../../components/Navigation';
 import { StickyTripSummary } from '../../../components/StickyTripSummary';
 import { SectionHeader } from '../../../components/SectionHeader';
 import { ErrorMessage } from '../../../components/ErrorMessage';
-import { tripAPI } from '../../../lib/api';
+import { tripService } from '../../../lib/api';
 import {
   normalizeTripResponse,
   type NormalizedTrip,
@@ -41,9 +41,9 @@ export default function Overview() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await tripAPI.get(tripId);
+      const response = await tripService.getTripDetails(tripId);
       if (!isMounted.current) return;
-      const normalized = normalizeTripResponse(response.data);
+      const normalized = normalizeTripResponse(response);
       setData(normalized);
     } catch (error: unknown) {
       if (!isMounted.current) return;
