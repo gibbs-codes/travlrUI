@@ -14,7 +14,7 @@ import { StickyTripSummary } from '../../../components/StickyTripSummary';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { tripService } from '../../../lib/api';
 import { formatMoney } from '../../../lib/formatters';
-import type { Flight, Restaurant, Stay, Transit } from '../../../lib/types';
+import type { Flight, Restaurant, Stay, Transit, Trip } from '../../../lib/types';
 
 interface TripSummary {
   tripId: string;
@@ -61,17 +61,17 @@ export default function Recommendations() {
 
       // Extract just the summary info we need
       const summary: TripSummary = {
-        tripId: response.tripId,
-        destination: response.destination,
-        origin: response.origin,
-        departureDate: response.departureDate,
-        returnDate: response.returnDate,
-        travelers: response.travelers?.count || 1,
+        tripId: response.tripId || tripId,
+        destination: response.destination || '',
+        origin: response.origin || '',
+        departureDate: response.departureDate || '',
+        returnDate: response.returnDate || '',
+        travelers: typeof response.travelers === 'number' ? response.travelers : response.travelers?.count || 1,
         selections: {
-          flight: response.selections?.flight,
-          stay: response.selections?.stay,
-          transit: response.selections?.transit,
-          restaurants: response.selections?.restaurants || [],
+          flight: response.selectedRecommendations?.flight?.[0] as Flight | undefined,
+          stay: response.selectedRecommendations?.accommodation?.[0] as Stay | undefined,
+          transit: response.selectedRecommendations?.activity?.[0] as Transit | undefined,
+          restaurants: (response.selectedRecommendations?.restaurant || []) as Restaurant[],
         },
       };
 
@@ -187,6 +187,7 @@ export default function Recommendations() {
           transportation: tripSummary.selections.transit ? [tripSummary.selections.transit.id] : [],
           restaurant: tripSummary.selections.restaurants.map((r) => r.id),
         },
+        selectedBy: 'user',
       });
 
       // Navigate to overview
@@ -217,6 +218,18 @@ export default function Recommendations() {
       window.print();
     }
   };
+
+  // Convert TripSummary to Trip for StickyTripSummary
+  const convertToTrip = (summary: TripSummary) => ({
+    id: summary.tripId,
+    origin: summary.origin,
+    destination: summary.destination,
+    start: summary.departureDate,
+    end: summary.returnDate,
+    travelers: summary.travelers,
+    currency: 'USD' as const,
+    selections: summary.selections,
+  });
 
   // Calculate if sections are unlocked
   const isStaySelected = !!tripSummary?.selections.stay;
@@ -296,20 +309,9 @@ export default function Recommendations() {
           {tripSummary && !isLoadingSummary && (
             <aside className="hidden lg:block">
               <StickyTripSummary
-                destination={tripSummary.destination}
-                dates={`${new Date(tripSummary.departureDate).toLocaleDateString()} - ${new Date(
-                  tripSummary.returnDate
-                ).toLocaleDateString()}`}
-                travelers={tripSummary.travelers}
-                flight={tripSummary.selections.flight}
-                stay={tripSummary.selections.stay}
-                transit={tripSummary.selections.transit}
-                restaurants={tripSummary.selections.restaurants}
-                estimatedTotal={formatMoney({ amount: estimatedTotal, currency: 'USD' })}
+                trip={convertToTrip(tripSummary)}
                 onEdit={handleEdit}
-                onSave={handleSaveSelections}
                 onPrint={handlePrint}
-                isSaving={isSaving}
               />
             </aside>
           )}

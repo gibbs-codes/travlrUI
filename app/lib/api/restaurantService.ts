@@ -6,7 +6,7 @@ import type { Restaurant } from '../types';
  * Handles restaurant recommendations
  */
 class RestaurantService extends RecommendationService<Restaurant> {
-  protected readonly resourcePath = 'restaurants';
+  protected readonly resourcePath = 'restaurant';
 
   /**
    * Get restaurants with specific filters

@@ -56,6 +56,22 @@ class TripService extends BaseAPIService {
   async deleteTrip(tripId: string): Promise<{ message: string }> {
     return this.delete<{ message: string }>(`/api/trip/${tripId}`);
   }
+
+  /**
+   * Start agents for a trip (for generating skipped agents)
+   * @param tripId - The trip ID
+   * @param agents - Array of agent types to start (e.g., ['activity', 'restaurant'])
+   * @returns Success response with message
+   */
+  async startAgents(
+    tripId: string,
+    agents: string[]
+  ): Promise<{ success: boolean; message: string }> {
+    return this.post<{ success: boolean; message: string }>(
+      `/api/trip/${tripId}/agents/start`,
+      { agents }
+    );
+  }
 }
 
 // Export singleton instance

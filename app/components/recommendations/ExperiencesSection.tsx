@@ -87,8 +87,8 @@ export const ExperiencesSection = forwardRef<HTMLElement, ExperiencesSectionProp
           {!isLoading && !error && experiences.length === 0 && (
             <EmptyState
               icon={<Car className="h-12 w-12 text-gray-400" />}
-              title="No transit options yet"
-              message="We're looking for the best ways to get around. Transit options will appear here soon."
+              title="No experiences found in this area"
+              message="We couldn't find transit or activity options for this location. You can still browse restaurants below."
             />
           )}
 

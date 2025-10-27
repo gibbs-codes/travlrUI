@@ -61,6 +61,12 @@ interface CreateTripFormValues {
   minRating: string;
   flightClass: string;
   diningPriceRange: string;
+  selectedAgents: {
+    flight: boolean;
+    accommodation: boolean;
+    activity: boolean;
+    restaurant: boolean;
+  };
 }
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -88,6 +94,12 @@ export default function CreateTrip() {
     minRating: '3',
     flightClass: 'economy',
     diningPriceRange: 'mid_range',
+    selectedAgents: {
+      flight: true,
+      accommodation: true,
+      activity: false,
+      restaurant: false,
+    },
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState('');
@@ -179,6 +191,12 @@ export default function CreateTrip() {
       }
     }
 
+    // Validate at least one agent is selected
+    const selectedAgentCount = Object.values(formData.selectedAgents).filter(Boolean).length;
+    if (selectedAgentCount === 0) {
+      newErrors.agents = 'Please select at least one recommendation type';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -209,6 +227,19 @@ export default function CreateTrip() {
     }));
   };
 
+  const handleAgentToggle = (agentKey: keyof CreateTripFormValues['selectedAgents']) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedAgents: {
+        ...prev.selectedAgents,
+        [agentKey]: !prev.selectedAgents[agentKey],
+      },
+    }));
+    // Clear agent selection error if exists
+    if (errors.agents) {
+      setErrors(prev => ({ ...prev, agents: '' }));
+    }
+  };
 
   const buildPayloadFromForm = (): TripRequest => {
     const travelerCount = parseInt(formData.travelers, 10);
@@ -832,6 +863,156 @@ export default function CreateTrip() {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Agent Selection */}
+              <div style={{ marginBottom: 'var(--space-6)' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: 'var(--space-3)',
+                    fontSize: '0.9rem',
+                    fontWeight: 'var(--weight-medium)',
+                    fontFamily: 'var(--font-display)',
+                    letterSpacing: '0.3px',
+                  }}
+                >
+                  What recommendations do you want?
+                </label>
+                <p
+                  style={{
+                    marginBottom: 'var(--space-4)',
+                    fontSize: '0.85rem',
+                    opacity: 0.7,
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  You can always add more recommendations later
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 'var(--space-3)',
+                      background: formData.selectedAgents.flight
+                        ? 'rgba(255, 255, 255, 0.25)'
+                        : 'rgba(255, 255, 255, 0.1)',
+                      border: `1px solid ${
+                        formData.selectedAgents.flight
+                          ? 'rgba(255, 255, 255, 0.5)'
+                          : 'rgba(255, 255, 255, 0.2)'
+                      }`,
+                      borderRadius: 'var(--radius-md)',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-base)',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.selectedAgents.flight}
+                      onChange={() => handleAgentToggle('flight')}
+                      style={{ marginRight: 'var(--space-2)' }}
+                    />
+                    Flights
+                  </label>
+
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 'var(--space-3)',
+                      background: formData.selectedAgents.accommodation
+                        ? 'rgba(255, 255, 255, 0.25)'
+                        : 'rgba(255, 255, 255, 0.1)',
+                      border: `1px solid ${
+                        formData.selectedAgents.accommodation
+                          ? 'rgba(255, 255, 255, 0.5)'
+                          : 'rgba(255, 255, 255, 0.2)'
+                      }`,
+                      borderRadius: 'var(--radius-md)',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-base)',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.selectedAgents.accommodation}
+                      onChange={() => handleAgentToggle('accommodation')}
+                      style={{ marginRight: 'var(--space-2)' }}
+                    />
+                    Hotels
+                  </label>
+
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 'var(--space-3)',
+                      background: formData.selectedAgents.activity
+                        ? 'rgba(255, 255, 255, 0.25)'
+                        : 'rgba(255, 255, 255, 0.1)',
+                      border: `1px solid ${
+                        formData.selectedAgents.activity
+                          ? 'rgba(255, 255, 255, 0.5)'
+                          : 'rgba(255, 255, 255, 0.2)'
+                      }`,
+                      borderRadius: 'var(--radius-md)',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-base)',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.selectedAgents.activity}
+                      onChange={() => handleAgentToggle('activity')}
+                      style={{ marginRight: 'var(--space-2)' }}
+                    />
+                    Activities
+                  </label>
+
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 'var(--space-3)',
+                      background: formData.selectedAgents.restaurant
+                        ? 'rgba(255, 255, 255, 0.25)'
+                        : 'rgba(255, 255, 255, 0.1)',
+                      border: `1px solid ${
+                        formData.selectedAgents.restaurant
+                          ? 'rgba(255, 255, 255, 0.5)'
+                          : 'rgba(255, 255, 255, 0.2)'
+                      }`,
+                      borderRadius: 'var(--radius-md)',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-base)',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.selectedAgents.restaurant}
+                      onChange={() => handleAgentToggle('restaurant')}
+                      style={{ marginRight: 'var(--space-2)' }}
+                    />
+                    Restaurants
+                  </label>
+                </div>
+                {errors.agents && (
+                  <p
+                    style={{
+                      marginTop: 'var(--space-2)',
+                      fontSize: '0.85rem',
+                      color: '#dc2626',
+                    }}
+                  >
+                    {errors.agents}
+                  </p>
+                )}
               </div>
 
               {/* Advanced Options Toggle */}

@@ -1,0 +1,257 @@
+/* Trip Status Page Layout */
+
+/* Page Container */
+.pageContainer {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* Header Section */
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.tripTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 0.5rem;
+}
+
+.tripSubtitle {
+  font-size: 1.125rem;
+  color: #6b7280;
+  margin: 0 0 2rem;
+  font-weight: 400;
+}
+
+/* Overall Progress Section */
+.progressSection {
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.progressLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.progressPercentage {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Agent Grid */
+.agentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 2rem;
+}
+
+/* Ensure equal height cards */
+.agentGrid > * {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Status Message */
+.statusMessage {
+  text-align: center;
+  padding: 1.5rem;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 12px;
+  margin-top: 2rem;
+}
+
+.statusMessageText {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Tablet Breakpoint (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .pageContainer {
+    padding: 1.5rem 1rem;
+  }
+
+  .header {
+    margin-bottom: 2rem;
+  }
+
+  .tripTitle {
+    font-size: 1.75rem;
+  }
+
+  .tripSubtitle {
+    font-size: 1rem;
+  }
+
+  .agentGrid {
+    gap: 16px;
+  }
+
+  .agentGrid > * {
+    min-height: 280px;
+  }
+}
+
+/* Mobile Breakpoint (<768px) */
+@media (max-width: 767px) {
+  .pageContainer {
+    padding: 1rem 0.75rem;
+  }
+
+  .header {
+    margin-bottom: 1.5rem;
+  }
+
+  .tripTitle {
+    font-size: 1.5rem;
+  }
+
+  .tripSubtitle {
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .progressSection {
+    margin-bottom: 1.5rem;
+  }
+
+  .progressLabel {
+    font-size: 0.8125rem;
+  }
+
+  .progressPercentage {
+    font-size: 1.125rem;
+  }
+
+  /* Single column on mobile */
+  .agentGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .agentGrid > * {
+    min-height: 250px;
+  }
+
+  .statusMessage {
+    padding: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .statusMessageText {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Large Desktop (>1400px) */
+@media (min-width: 1400px) {
+  .pageContainer {
+    padding: 2.5rem 2rem;
+  }
+
+  .agentGrid {
+    gap: 32px;
+  }
+
+  .agentGrid > * {
+    min-height: 320px;
+  }
+}
+
+/* Smooth transitions for responsive changes */
+.agentGrid,
+.agentGrid > *,
+.progressFill {
+  transition: all 0.3s ease;
+}
+
+/* Loading state for the entire page */
+.pageLoading {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Empty state */
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.emptyStateIcon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.emptyStateTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 0.5rem;
+}
+
+.emptyStateMessage {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Handle different numbers of cards */
+/* When only 1 card is active */
+.agentGrid.singleCard {
+  grid-template-columns: 1fr;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* When only 3 cards are active */
+@media (min-width: 768px) {
+  .agentGrid.threeCards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .agentGrid.threeCards > :last-child {
+    grid-column: span 2;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+}

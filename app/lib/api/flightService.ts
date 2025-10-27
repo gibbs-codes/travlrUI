@@ -6,7 +6,7 @@ import type { Flight } from '../types';
  * Handles flight recommendations
  */
 class FlightService extends RecommendationService<Flight> {
-  protected readonly resourcePath = 'flights';
+  protected readonly resourcePath = 'flight';
 
   /**
    * Get flights with specific filters

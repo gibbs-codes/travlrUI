@@ -6,7 +6,7 @@ import type { Stay } from '../types';
  * Handles accommodation recommendations
  */
 class HotelService extends RecommendationService<Stay> {
-  protected readonly resourcePath = 'hotels';
+  protected readonly resourcePath = 'accommodation';
 
   /**
    * Get hotels with specific filters

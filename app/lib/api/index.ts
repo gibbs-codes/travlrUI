@@ -9,6 +9,25 @@ export { apiClient, BaseAPIService } from './baseService';
 export { RecommendationService } from './recommendationService';
 export type { RecommendationResponse, RerunRequest, SelectionRequest } from './recommendationService';
 
+// Helper utilities
+export {
+  agentTypeToEndpoint,
+  agentTypeToPluralEndpoint,
+  endpointToAgentType,
+  getAgentDisplayName,
+  getAgentPluralName,
+  isValidAgentType,
+  buildRecommendationPath,
+  buildRerunPath,
+  buildAgentStartPath,
+  buildStatusPath,
+  buildQueryString,
+  getServiceForAgentType,
+  batchAgentEndpoints,
+  hasRecommendations,
+  isSuccessResponse,
+} from './helpers';
+
 // Specific services
 import { tripService } from './tripService';
 import { flightService } from './flightService';

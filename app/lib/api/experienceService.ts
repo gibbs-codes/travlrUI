@@ -6,7 +6,7 @@ import type { Transit } from '../types';
  * Handles activities and transit recommendations
  */
 class ExperienceService extends RecommendationService<Transit> {
-  protected readonly resourcePath = 'experiences';
+  protected readonly resourcePath = 'activity';
 
   /**
    * Get experiences with specific filters
