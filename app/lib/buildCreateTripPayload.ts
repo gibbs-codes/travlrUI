@@ -152,13 +152,8 @@ export function buildCreateTripPayload(input: any): TripRequest {
     ? [...rawInterests]
     : ['food', 'cultural', 'adventure', 'nightlife'];
 
-  // Build agentsToRun array from selectedAgents object
-  let agentsToRun: string[] | undefined;
-  if (input.selectedAgents) {
-    agentsToRun = Object.keys(input.selectedAgents).filter(
-      (key) => input.selectedAgents[key] === true
-    );
-  }
+  // Build agentsToRun array - use provided list or default to all agents
+  const agentsToRun = input.agentsToRun || ['flight', 'accommodation', 'activity', 'restaurant'];
 
   const payload: TripRequest = {
     title: input.title || (destination ? `Trip to ${destination}` : 'Untitled Trip'),
@@ -178,7 +173,7 @@ export function buildCreateTripPayload(input: any): TripRequest {
       ...DEFAULT_COLLABORATION,
       ...(input.collaboration || {}),
     },
-    ...(agentsToRun && agentsToRun.length > 0 ? { agentsToRun } : {}),
+    agentsToRun,
   };
 
   return payload;

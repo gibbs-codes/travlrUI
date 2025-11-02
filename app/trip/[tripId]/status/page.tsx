@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Background } from '../../../components/Background';
 import { GlassCard } from '../../../components/GlassCard';
 import { Heading, Text } from '../../../components/Typography';
@@ -21,6 +21,7 @@ const DISPLAY_AGENTS: AgentType[] = [
 
 export default function TripStatus() {
   const params = useParams();
+  const router = useRouter();
   const tripId = params.tripId as string;
 
   // Determine grid class based on number of active agents
@@ -31,10 +32,18 @@ export default function TripStatus() {
     return styles.agentGrid;
   };
 
+  const handleViewSummary = () => {
+    router.push(`/trip/${tripId}/overview`);
+  };
+
   return (
     <>
       <Background />
-      <TopBar logo="TravlrAPI" navText="explore" />
+      <TopBar
+        logo="TravlrAPI"
+        navText="View Summary"
+        navLink={`/trip/${tripId}/overview`}
+      />
 
       <div className={styles.pageContainer}>
         {/* Header Section */}
@@ -72,6 +81,29 @@ export default function TripStatus() {
               <p className={styles.statusMessageText}>
                 Each agent works independently. You can view recommendations as they become available.
               </p>
+            </div>
+
+            {/* View Summary Button */}
+            <div className="mt-6 text-center">
+              <button
+                onClick={handleViewSummary}
+                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-3 text-base font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+              >
+                View Trip Summary
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
             </div>
           </GlassCard>
         </ErrorBoundary>

@@ -15,6 +15,10 @@ import { useAgentStatus } from '../hooks/useAgentStatus';
 import { AgentCard } from './AgentCard';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Celebration } from './Celebration';
+import { FlightCard } from './recommendations/FlightCard';
+import { HotelCard } from './recommendations/HotelCard';
+import { RestaurantCard } from './recommendations/RestaurantCard';
+import { ExperienceCard } from './recommendations/ExperienceCard';
 import { flightService, hotelService, experienceService, restaurantService, tripService } from '../lib/api';
 import { toast } from '../lib/toast';
 import type { AgentType } from '../lib/types';
@@ -42,6 +46,7 @@ export const TripAgentCard = React.memo(function TripAgentCard({ tripId, agentTy
   const [showRerunConfirm, setShowRerunConfirm] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [prevStatus, setPrevStatus] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Fetch recommendations when status becomes completed
   const fetchRecommendations = useCallback(async () => {
@@ -162,6 +167,47 @@ export const TripAgentCard = React.memo(function TripAgentCard({ tripId, agentTy
     setShowRerunConfirm(false);
   }, []);
 
+  // Handle recommendation selection
+  const handleSelectRecommendation = useCallback(async (recommendationId: string) => {
+    console.log(`[TripAgentCard] Selecting ${agentType} recommendation:`, recommendationId);
+
+    // Optimistically update UI
+    setSelectedIds(prev => new Set(prev).add(recommendationId));
+
+    try {
+      const service = SERVICES[agentType];
+      if (!service) {
+        throw new Error('Service not available');
+      }
+
+      // Call the select API
+      await service.selectRecommendation(tripId, recommendationId);
+
+      // Show success toast
+      const agentNames: Record<AgentType, string> = {
+        flight: 'Flight',
+        accommodation: 'Hotel',
+        activity: 'Activity',
+        restaurant: 'Restaurant',
+        transportation: 'Transportation',
+      };
+      toast.success(`${agentNames[agentType]} selected!`);
+    } catch (err: any) {
+      console.error(`[TripAgentCard] Error selecting ${agentType}:`, err);
+
+      // Revert optimistic update
+      setSelectedIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(recommendationId);
+        return newSet;
+      });
+
+      // Show error toast
+      const errorMessage = err?.message || 'Failed to select recommendation';
+      toast.error(errorMessage);
+    }
+  }, [tripId, agentType]);
+
   // Handle generate - start a skipped agent
   const handleGenerate = useCallback(async () => {
     console.log(`[TripAgentCard] Generating ${agentType} recommendations (was skipped)`);
@@ -251,23 +297,26 @@ export const TripAgentCard = React.memo(function TripAgentCard({ tripId, agentTy
           )}
 
           {!isLoadingRecs && !recsError && recommendations.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <p className="text-sm font-medium text-gray-700">
                 {recommendations.length} recommendation{recommendations.length !== 1 ? 's' : ''} found
               </p>
 
-              {/* Render recommendation preview cards */}
-              {recommendations.slice(0, 3).map((rec, index) => (
-                <RecommendationPreview
+              {/* Render recommendation cards (limit to first 5) */}
+              {recommendations.slice(0, 5).map((rec, index) => (
+                <RecommendationCard
                   key={rec.id || index}
                   recommendation={rec}
                   agentType={agentType}
+                  isSelected={selectedIds.has(rec.id)}
+                  onSelect={handleSelectRecommendation}
+                  onRerun={handleRerunClick}
                 />
               ))}
 
-              {recommendations.length > 3 && (
+              {recommendations.length > 5 && (
                 <p className="text-xs text-gray-500 text-center pt-2">
-                  + {recommendations.length - 3} more options
+                  + {recommendations.length - 5} more options available
                 </p>
               )}
             </div>
@@ -300,110 +349,63 @@ export const TripAgentCard = React.memo(function TripAgentCard({ tripId, agentTy
 });
 
 /**
- * Recommendation preview component - shows a compact preview of a recommendation
+ * Recommendation card component - renders the appropriate card type based on agent type
  */
-function RecommendationPreview({ recommendation, agentType }: { recommendation: any; agentType: AgentType }) {
+interface RecommendationCardProps {
+  recommendation: any;
+  agentType: AgentType;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+  onRerun?: () => void;
+}
+
+function RecommendationCard({
+  recommendation,
+  agentType,
+  isSelected,
+  onSelect,
+  onRerun,
+}: RecommendationCardProps) {
   // Render based on agent type
   switch (agentType) {
     case 'flight':
-      return <FlightPreview flight={recommendation as Flight} />;
+      return (
+        <FlightCard
+          flight={recommendation as Flight}
+          isSelected={isSelected}
+          onSelect={onSelect}
+          onRerun={onRerun}
+        />
+      );
     case 'accommodation':
-      return <HotelPreview hotel={recommendation as Stay} />;
+      return (
+        <HotelCard
+          stay={recommendation as Stay}
+          isSelected={isSelected}
+          onSelect={onSelect}
+          onRerun={onRerun}
+        />
+      );
     case 'activity':
     case 'transportation':
-      return <ExperiencePreview experience={recommendation as Transit} />;
+      return (
+        <ExperienceCard
+          transit={recommendation as Transit}
+          isSelected={isSelected}
+          onSelect={onSelect}
+          onRerun={onRerun}
+        />
+      );
     case 'restaurant':
-      return <RestaurantPreview restaurant={recommendation as Restaurant} />;
+      return (
+        <RestaurantCard
+          restaurant={recommendation as Restaurant}
+          isSelected={isSelected}
+          onSelect={onSelect}
+          onRerun={onRerun}
+        />
+      );
     default:
-      return <GenericPreview item={recommendation} />;
+      return null;
   }
-}
-
-function FlightPreview({ flight }: { flight: Flight }) {
-  return (
-    <div className="p-3 bg-white/50 rounded-lg border border-gray-200 text-sm">
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="font-medium text-gray-900">{flight.carrier} {flight.flightNo}</p>
-          <p className="text-xs text-gray-600">
-            {flight.stops === 0 ? 'Nonstop' : `${flight.stops} stop${flight.stops > 1 ? 's' : ''}`}
-          </p>
-        </div>
-        <p className="font-semibold text-gray-900">${flight.price.amount}</p>
-      </div>
-    </div>
-  );
-}
-
-function HotelPreview({ hotel }: { hotel: Stay }) {
-  return (
-    <div className="p-3 bg-white/50 rounded-lg border border-gray-200 text-sm">
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <p className="font-medium text-gray-900">{hotel.name}</p>
-          {hotel.neighborhood && (
-            <p className="text-xs text-gray-600">{hotel.neighborhood}</p>
-          )}
-          {hotel.rating && (
-            <p className="text-xs text-gray-600">★ {hotel.rating.toFixed(1)}</p>
-          )}
-        </div>
-        <p className="font-semibold text-gray-900">${hotel.total.amount}</p>
-      </div>
-    </div>
-  );
-}
-
-function ExperiencePreview({ experience }: { experience: Transit }) {
-  return (
-    <div className="p-3 bg-white/50 rounded-lg border border-gray-200 text-sm">
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <p className="font-medium text-gray-900">
-            {experience.chain.join(' → ')}
-          </p>
-          <p className="text-xs text-gray-600">Duration: {experience.durationISO}</p>
-        </div>
-        {experience.fare && (
-          <p className="font-semibold text-gray-900">${experience.fare.amount}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RestaurantPreview({ restaurant }: { restaurant: Restaurant }) {
-  return (
-    <div className="p-3 bg-white/50 rounded-lg border border-gray-200 text-sm">
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <p className="font-medium text-gray-900">{restaurant.name}</p>
-          {restaurant.cuisine && (
-            <p className="text-xs text-gray-600">{restaurant.cuisine}</p>
-          )}
-          <div className="flex items-center gap-2 mt-1">
-            {restaurant.rating && (
-              <p className="text-xs text-gray-600">★ {restaurant.rating.toFixed(1)}</p>
-            )}
-            {restaurant.priceLevel && (
-              <p className="text-xs text-gray-600">
-                {'$'.repeat(restaurant.priceLevel)}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function GenericPreview({ item }: { item: any }) {
-  return (
-    <div className="p-3 bg-white/50 rounded-lg border border-gray-200 text-sm">
-      <p className="font-medium text-gray-900">{item.name || item.title || 'Recommendation'}</p>
-      {item.description && (
-        <p className="text-xs text-gray-600 mt-1 line-clamp-2">{item.description}</p>
-      )}
-    </div>
-  );
 }

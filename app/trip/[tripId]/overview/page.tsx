@@ -101,21 +101,48 @@ export default function Overview() {
   return (
     <>
       <Background />
-      <TopBar logo="Travlr" navText="home" />
+      <TopBar
+        logo="Travlr"
+        navText="Back to Status"
+        navLink={`/trip/${tripId}/status`}
+      />
 
       <main className="relative z-10">
         <div className="mx-auto max-w-6xl px-4 pb-16 pt-24 lg:px-6">
           {/* Layout note: two-column grid mirrors recommendations so the summary stays anchored. */}
-          <header className="mb-10 space-y-2">
-            <p className="text-sm uppercase tracking-wide text-slate-500">
-              Trip overview
-            </p>
-            <h1 className="text-3xl font-semibold text-slate-900">
-              Your curated itinerary
-            </h1>
-            <p className="text-sm text-slate-500">
-              A quick snapshot of what&apos;s locked in and what&apos;s still open.
-            </p>
+          <header className="mb-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-2">
+                <p className="text-sm uppercase tracking-wide text-slate-500">
+                  Trip overview
+                </p>
+                <h1 className="text-3xl font-semibold text-slate-900">
+                  Your curated itinerary
+                </h1>
+                <p className="text-sm text-slate-500">
+                  A quick snapshot of what&apos;s locked in and what&apos;s still open.
+                </p>
+              </div>
+              <button
+                onClick={() => router.push(`/trip/${tripId}/status`)}
+                className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                Back to Selection
+              </button>
+            </div>
           </header>
 
           {error && !trip && (
