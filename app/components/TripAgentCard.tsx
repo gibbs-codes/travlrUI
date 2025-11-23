@@ -79,13 +79,13 @@ export const TripAgentCard = React.memo(function TripAgentCard({ tripId, agentTy
   // Fetch recommendations and show celebration when status changes to completed
   useEffect(() => {
     if (status === 'completed' && prevStatus !== 'completed') {
+      console.log(`[TripAgentCard] ${agentType} just completed, fetching recommendations`);
       fetchRecommendations();
-      // Show celebration animation
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 2000);
     }
     setPrevStatus(status);
-  }, [status, prevStatus, fetchRecommendations]);
+  }, [status, prevStatus, fetchRecommendations, agentType]);
 
   // Get human-readable agent names
   const getAgentName = (type: AgentType): string => {
@@ -208,12 +208,11 @@ export const TripAgentCard = React.memo(function TripAgentCard({ tripId, agentTy
     }
   }, [tripId, agentType]);
 
-  // Handle generate - start a skipped agent
+  // Handle generate - start a skipped or idle agent
   const handleGenerate = useCallback(async () => {
-    console.log(`[TripAgentCard] Generating ${agentType} recommendations (was skipped)`);
+    console.log(`[TripAgentCard] Generating ${agentType} recommendations (was idle)`);
     setRecsError(null);
 
-    // Get human-readable agent name
     const agentNames: Record<AgentType, string> = {
       flight: 'flight',
       accommodation: 'hotel',
@@ -221,35 +220,29 @@ export const TripAgentCard = React.memo(function TripAgentCard({ tripId, agentTy
       restaurant: 'restaurant',
       transportation: 'transportation',
     };
-    const agentName = agentNames[agentType] || agentType;
+
+    const agentName = agentNames[agentType];
 
     try {
-      // Show loading toast
       toast.info(`Generating ${agentName} recommendations...`);
 
-      // Call the backend to start the agent
+      // Call API to start this specific agent
       await tripService.startAgents(tripId, [agentType]);
 
-      // Show success toast
       toast.success(`Started generating ${agentName} recommendations!`);
 
-      // Refetch status to see the agent starting
+      // Immediately refetch to get updated status (should be 'running')
       await refetch();
-    } catch (err: any) {
-      console.error(`[TripAgentCard] Error starting ${agentType}:`, err);
 
-      // Handle specific error codes
+    } catch (err: any) {
       let errorMessage = 'Failed to start agent, please try again';
 
       if (err.status === 409) {
-        errorMessage = 'Agents are currently running, please wait';
+        errorMessage = 'Agent is already running, please wait';
       } else if (err.status === 400) {
         errorMessage = 'Invalid agent request';
-      } else if (err.message) {
-        errorMessage = err.message;
       }
 
-      // Show error toast
       toast.error(errorMessage);
       setRecsError(errorMessage);
     }
@@ -274,7 +267,7 @@ export const TripAgentCard = React.memo(function TripAgentCard({ tripId, agentTy
         status={cardStatus}
         recommendationCount={recommendationCount}
         onRerun={status === 'completed' ? handleRerunClick : undefined}
-        onGenerate={status === 'skipped' ? handleGenerate : undefined}
+        onGenerate={status === 'skipped' || status === 'idle' ? handleGenerate : undefined}
       >
       {/* Show recommendations when completed */}
       {status === 'completed' && (

@@ -48,9 +48,9 @@ export default function TripStatus() {
       <div className={styles.pageContainer}>
         {/* Header Section */}
         <header className={styles.header}>
-          <h1 className={styles.tripTitle}>Planning Your Trip</h1>
+          <h1 className={styles.tripTitle}>Your Trip Recommendations</h1>
           <p className={styles.tripSubtitle}>
-            Our AI agents are working independently to find the best options for your journey
+            Generate recommendations for each category independently. Click "Generate" on any card to start.
           </p>
         </header>
 
@@ -58,10 +58,10 @@ export default function TripStatus() {
           <GlassCard>
             {/* Section Title */}
             <div className="mb-8 text-center">
-              <Heading level={2} elegant>AI Agents at Work</Heading>
+              <Heading level={2} elegant>AI Agents</Heading>
               <Text className="mt-3 text-gray-600">
                 Each agent specializes in finding the perfect recommendations.
-                Watch as they complete their search.
+                Start any agent to begin searching.
               </Text>
             </div>
 

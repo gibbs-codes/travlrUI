@@ -107,7 +107,7 @@ export interface TripStatusResponse {
 // Agent Types
 // ============================================================================
 
-export type AgentState = 'pending' | 'running' | 'completed' | 'failed';
+export type AgentState = 'idle' | 'pending' | 'running' | 'completed' | 'failed';
 
 export interface AgentStatus {
   id: string;

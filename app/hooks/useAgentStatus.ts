@@ -42,7 +42,7 @@ export function useAgentStatus(
   // Check if polling should stop based on current status
   const shouldStopPolling = (currentStatus: ExtendedAgentState | null): boolean => {
     if (!currentStatus) return false;
-    return currentStatus === 'completed' || currentStatus === 'failed' || currentStatus === 'skipped';
+    return currentStatus === 'completed' || currentStatus === 'failed' || currentStatus === 'skipped' || currentStatus === 'idle';
   };
 
   // Fetch agent status
@@ -128,7 +128,7 @@ export function useAgentStatus(
     await fetchAgentStatus();
   }, [fetchAgentStatus, agentType]);
 
-  // Start polling on mount
+  // Start polling on mount and manage polling based on status
   useEffect(() => {
     console.log(`[useAgentStatus] Hook mounted for ${agentType} on trip ${tripId}`);
     isMountedRef.current = true;
@@ -136,10 +136,20 @@ export function useAgentStatus(
     // Initial fetch
     fetchAgentStatus();
 
-    // Start polling interval
-    intervalRef.current = setInterval(() => {
-      fetchAgentStatus();
-    }, pollingInterval);
+    // Only start polling interval if status is 'running'
+    if (status === 'running') {
+      console.log(`[useAgentStatus] Starting polling for ${agentType} (status: ${status})`);
+      intervalRef.current = setInterval(() => {
+        fetchAgentStatus();
+      }, pollingInterval);
+    } else {
+      // Clear any existing interval if status is not running
+      if (intervalRef.current) {
+        console.log(`[useAgentStatus] Stopping polling for ${agentType} (status: ${status})`);
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
 
     // Cleanup function
     return () => {
@@ -151,7 +161,7 @@ export function useAgentStatus(
         intervalRef.current = null;
       }
     };
-  }, [tripId, agentType, pollingInterval, fetchAgentStatus]);
+  }, [tripId, agentType, pollingInterval, fetchAgentStatus, status]);
 
   return {
     status,
