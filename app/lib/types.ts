@@ -59,6 +59,7 @@ export interface TripRequest {
   travelers: TravelerDetails;
   preferences: TripPreferences;
   collaboration: CollaborationDetails;
+  triggerOrchestrator?: boolean;
 }
 
 export interface TripResponse {

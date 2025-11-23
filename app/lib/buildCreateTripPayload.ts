@@ -174,6 +174,7 @@ export function buildCreateTripPayload(input: any): TripRequest {
       ...(input.collaboration || {}),
     },
     agentsToRun,
+    triggerOrchestrator: input.triggerOrchestrator ?? false,
   };
 
   return payload;

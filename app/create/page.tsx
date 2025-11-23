@@ -155,6 +155,7 @@ export default function CreateTrip() {
         infants: 0,
       },
       agentsToRun: ['flight', 'accommodation', 'activity', 'restaurant'],
+      triggerOrchestrator: false,
     });
   };
 
